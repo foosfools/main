@@ -11,6 +11,13 @@
 motorController::motorController()
 {
 	fd = open("/dev/spidev1.0", O_RDWR);
+	
+	if(fd < 0)
+	{
+		printf("spi failed to open..running Python command: ...\n");
+		system("python -c \"from Adafruit_BBIO.SPI import SPI; SPI(0,0)\"");
+		fd = open("/dev/spidev1.0", O_RDWR);
+	}
 	if(fd < 0) printf("spi failed to open\n");
 }
 
@@ -39,15 +46,14 @@ int prevAngularPosition = 0;
  */
 void motorController::rotateGoalie(int newPosition)
 {
-
-	printf("rotateGoalie:  previous position: %d -> new position: %d\n",prevAngularPosition, newPosition);
-
 	char m[7] = "$110dR";
 	
-	if(prevAngularPosition == newPosition) // return if no change in position
+	// return if no change in position
+	if(prevAngularPosition > (newPosition - 10) && prevAngularPosition < (newPosition + 10)) 
 	{
 		return;
 	}
+	/*
 	else if(prevAngularPosition > newPosition)
 	{
 		m[2] = (char) 1; // direction CCW or beckward
@@ -60,13 +66,18 @@ void motorController::rotateGoalie(int newPosition)
 		newPosition = newPosition - prevAngularPosition;
 		prevAngularPosition += newPosition;
 	}
-	
+*/	
+
+	printf("Rotate Goalie:  previous position: %d -> new position: %d\n",prevAngularPosition, newPosition);
+
+
+	prevAngularPosition = newPosition;
 	// int size is 2 bytes
 	m[3] = (char) (newPosition >> 8); 	// 1 byte
 	m[4] = (char) newPosition; 		// 
 	
 
-	printf("rotateGoalie: %d %d & position: %d\n",m[3],m[4], newPosition);
+	// printf("rotateGoalie: %d %d & position: %d\n",m[3],m[4], newPosition);
 
 	
 	sendMessage(m);
@@ -86,14 +97,15 @@ int prevLinearPosition = 0;
  */
 void motorController::moveGoalie(int newPosition)
 {
-	printf("moveGoalie:  previous position: %d -> new position: %d\n",prevLinearPosition, newPosition);
-	
+
 	char m[7] = "$010dR";
 	
-	if(prevLinearPosition == newPosition) // return if no change in position
+	// return if no change in position
+	if(prevLinearPosition > (newPosition - 10) && prevLinearPosition < (newPosition + 10)) 
 	{
 		return;
 	}
+/*
 	else if(prevLinearPosition > newPosition)
 	{
 		m[2] = (char) 0; // direction CCW or beckward
@@ -106,15 +118,16 @@ void motorController::moveGoalie(int newPosition)
 		newPosition = newPosition - prevLinearPosition;
 		prevLinearPosition += newPosition;
 	}
-	
+	*/
+
+	printf("moveGoalie:  previous position: %d -> new position: %d\n",prevLinearPosition, newPosition);
+
 	// int size is 2 bytes
 	m[3] = (char) (newPosition >> 8); 	// 1 byte
 	m[4] = (char) newPosition; 		// 
 	
-
 	//printf("moveGoalie: %d %d & position: %d\n",m[3],m[4], newPosition);
-
-	
+	prevLinearPosition = newPosition;
 	sendMessage(m);
 }
 
@@ -142,6 +155,7 @@ void motorController::sendMessage(char* message)
 /**
 *
 */
+/*
 int main()
 {
 
@@ -172,4 +186,4 @@ int main()
 
 	return 0;
 }
-
+*/

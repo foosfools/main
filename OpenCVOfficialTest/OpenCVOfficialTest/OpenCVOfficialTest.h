@@ -29,7 +29,7 @@ rmax, gmax, bmax: 93, 120, 246
 #define MAX_COUNT 400
 #define CENTER_TO_GOAL 60.0/19.0
 //number of elements to average over during initialization
-#define N_ELEMENTS 30
+#define N_ELEMENTS 10
 
 #define GREEN_MIN_BULLSHIT 85, 197, 45
 #define GREEN_MAX_BULLSHIT 152, 255, 173

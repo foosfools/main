@@ -39,8 +39,8 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	// cout << capture.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
 	// cout << capture.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
 
-	int minArr[3] = { 0, 64, 165 };
-	int maxArr[3] = { 35, 255, 255 };
+	int minArr[3] = { 20, 109, 102};
+	int maxArr[3] = { 68, 153, 255};
 
 	rMax = maxArr[0];
 	gMax = maxArr[1];
@@ -62,7 +62,7 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	///////////Green Bar buffers/////////////////
 	//rmin, gmin, bmin: 76, 142, 0
 	//rmax, gmax, bmax: 119, 167, 227
-	controller();
+	//controller();
 }
 
 #pragma region
@@ -271,7 +271,7 @@ void OpenCVOfficialTest::Init() {
 		if (frame.empty())
 			continue;
 
-		blur(this->frame, this->frame, Size(2, 2));
+		//blur(this->frame, this->frame, Size(2, 2));
 		cvtColor(this->frame, this->HSV, CV_BGR2GRAY);
 
 		if (nCircles < N_ELEMENTS)
@@ -289,8 +289,11 @@ void OpenCVOfficialTest::Init() {
 			linesInit = true;
 		}
 		if (nBalls < N_ELEMENTS)
+		{
+			GaussianBlur(frame,frame, Size(5,5),2);
 			InitBall(nBalls);
-		else{
+		}
+			else{
 			if(!ballInit)
 			cout << "Ball initialized" << endl;
 			ballInit = true;
@@ -486,7 +489,7 @@ void OpenCVOfficialTest::InitCircle(int & nCircles) {
 		double xdist = (FRAME_WIDTH / 2) - circles[i][0];
 		double ydist = (FRAME_HEIGHT / 2) - circles[i][1];
 
-		tempDistance = sqrt(pow(xdist, 2.0) - pow(ydist, 2.0));
+		tempDistance = sqrt(abs(pow(xdist, 2.0) - pow(ydist, 2.0)));
 		if (tempDistance < distance) {
 			distance = tempDistance;
 			minCircle = i;
@@ -562,7 +565,7 @@ void OpenCVOfficialTest::InitBall(int &nBalls) {
 	Mat element = getStructuringElement(MORPH_ELLIPSE,
 			Size(2 * MORPH_ELLIPSE + 1, 2 * MORPH_ELLIPSE + 1), Point(1, 1));
 
-	erode(grayImg, grayImg, element);
+	//erode(grayImg, grayImg, element);
 	findColoredObject(grayImg, x, y);
 	if (x != 0 || y != 0) {
 		ballList[nBalls] = Point(x, y);
@@ -583,7 +586,7 @@ void OpenCVOfficialTest::IdentifyBall() {
 	Mat element = getStructuringElement(MORPH_ELLIPSE,
 			Size(2 * MORPH_ELLIPSE + 1, 2 * MORPH_ELLIPSE + 1), Point(1, 1));
 
-	erode(grayImg, grayImg, element);
+	//erode(grayImg, grayImg, element);
 	findColoredObject(grayImg, board.currX, board.currY);
 }
 
@@ -598,7 +601,7 @@ void OpenCVOfficialTest::trackDemBlobs() {
 		if (frame1.empty())
 			continue;
 
-		GaussianBlur(frame1, frame1, Size(11, 11), 3);
+		blur(frame1, frame1, Size(2, 2));
 
 		inRange(frame1, Scalar(rMin, gMin, bMin), Scalar(rMax, gMax, bMax),
 				grayImg);
@@ -813,6 +816,10 @@ void OpenCVOfficialTest::TrackBall() {
 
 		if (frame.empty())
 			continue;
+		
+		GaussianBlur(frame, frame, Size(5,5),2);
+		
+
 		//sets globals for ball
 		IdentifyBall();
 
@@ -825,7 +832,9 @@ void OpenCVOfficialTest::TrackBall() {
 				3);
 		drawObject(frame, board.currX, board.currY, 0, 0, 255);
 
-		controller.rotateGoalie(board.currY - 120);
+		controller.moveGoalie(board.currY);
+		controller.rotateGoalie(board.currX);
+		//controller.moveGoalie(board.currY - 120);
 
 		if (DISPLAY_WINDOWS) {
 			imshow(windowName, frame);
