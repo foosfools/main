@@ -39,8 +39,8 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	// cout << capture.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
 	// cout << capture.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
 
-	int minArr[3] = { 0, 86, 145};
-	int maxArr[3] = { 43, 112, 228};
+	int minArr[3] = { 0, 94, 179};
+	int maxArr[3] = { 85, 124, 225};
 
 	rMax = maxArr[0];
 	gMax = maxArr[1];

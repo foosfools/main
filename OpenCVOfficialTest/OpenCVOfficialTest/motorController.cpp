@@ -46,10 +46,11 @@ int prevAngularPosition = 0;
  */
 void motorController::rotateGoalie(int newPosition)
 {
+	int threshold = 4;
 	char m[7] = "$110dR";
 	
 	// return if no change in position
-	if(prevAngularPosition > (newPosition - 10) && prevAngularPosition < (newPosition + 10)) 
+	if(prevAngularPosition > (newPosition - threshold) && prevAngularPosition < (newPosition + threshold)) 
 	{
 		return;
 	}
@@ -97,11 +98,11 @@ int prevLinearPosition = 0;
  */
 void motorController::moveGoalie(int newPosition)
 {
-
+	int threshold = 4;
 	char m[7] = "$010dR";
 	
 	// return if no change in position
-	if(prevLinearPosition > (newPosition - 10) && prevLinearPosition < (newPosition + 10)) 
+	if(prevLinearPosition > (newPosition - threshold) && prevLinearPosition < (newPosition + threshold)) 
 	{
 		return;
 	}

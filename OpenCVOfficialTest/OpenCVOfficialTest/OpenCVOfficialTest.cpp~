@@ -39,8 +39,8 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	// cout << capture.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
 	// cout << capture.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
 
-	int minArr[3] = { 20, 109, 102};
-	int maxArr[3] = { 68, 153, 255};
+	int minArr[3] = { 0, 94, 179};
+	int maxArr[3] = { 85, 124, 225};
 
 	rMax = maxArr[0];
 	gMax = maxArr[1];
@@ -832,8 +832,8 @@ void OpenCVOfficialTest::TrackBall() {
 				3);
 		drawObject(frame, board.currX, board.currY, 0, 0, 255);
 
-		controller.moveGoalie(board.currY);
-		controller.rotateGoalie(board.currX);
+		controller.moveGoalie(board.lastYComp*board.lastBallVelocity);
+		controller.rotateGoalie(board.lastXComp*board.lastBallVelocity);
 		//controller.moveGoalie(board.currY - 120);
 
 		if (DISPLAY_WINDOWS) {
