@@ -23,8 +23,8 @@ rmax, gmax, bmax: 93, 120, 246
 
 #define TMAX 100
 
-#define FRAME_WIDTH 640
-#define FRAME_HEIGHT 480
+#define FRAME_WIDTH 320
+#define FRAME_HEIGHT 240
 #define THRESHOLD 15
 #define MAX_COUNT 400
 #define CENTER_TO_GOAL 60.0/19.0
