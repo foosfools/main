@@ -20,7 +20,7 @@ rmax, gmax, bmax: 93, 120, 246
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/video/tracking.hpp>
 #include "Board.h"
-#include "motorController.h"
+#include "motorController.h""
 #define TMAX 100
 
 #define FRAME_WIDTH 320
