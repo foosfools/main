@@ -34,5 +34,5 @@ stdafx.h
 targetver.h
 stdafx.cpp
 ReadMe.txt
-OpenCVOfficialTest/Debug/
-OpenCVOfficialTest/ipch/
+main/OpenCVOfficialTest/Debug/
+main/OpenCVOfficialTest/ipch/
