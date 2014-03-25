@@ -1,13 +1,11 @@
 // OpenCVOfficialTest.cpp : Defines the entry point for the console application.
 //
 
-#include "stdafx.h"
-
 #include <stdio.h>
 #include <tchar.h>
 
 
-
+#include "stdafx.h"
 // TODO: reference additional headers your program requires here
 #include <sstream>
 #include <string>
@@ -37,7 +35,7 @@ using namespace std;
 void BarMovedTest();
 void BarMoved(int i, void * v);
 void opticalFlow();
-
+void probe();
 int _tmain(int argc, _TCHAR* argv[])
 {
 	capture.open(0);
@@ -49,15 +47,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	return 0;
 }
-
-
-
-
-
-
-
-
-
 
 
 
