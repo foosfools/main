@@ -3,6 +3,21 @@
 
 #include "stdafx.h"
 
+#include <stdio.h>
+#include <tchar.h>
+
+
+
+// TODO: reference additional headers your program requires here
+#include <sstream>
+#include <string>
+#include <iostream>
+#include <ctype.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include<opencv2/opencv.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/video/tracking.hpp>
 
 #define TMAX 100
 
