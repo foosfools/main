@@ -2,6 +2,7 @@
 *.slo
 *.lo
 *.o
+*.obj
 
 # Compiled Dynamic libraries
 *.so
@@ -11,3 +12,25 @@
 *.lai
 *.la
 *.a
+
+# Stuff specific to Visual Studio
+*.sln
+*.sdf
+*.suo
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.tlog
+*.pdb
+*.idb
+*.pch
+*.log
+*.rc
+*.cache
+*.lastbuildstate
+*.manifest
+*.res
+stdafx.h
+targetver.h
+stdafx.c
+ReadMe.txt
