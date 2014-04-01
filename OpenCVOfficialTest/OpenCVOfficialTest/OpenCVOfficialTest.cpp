@@ -1,10 +1,6 @@
 // OpenCVOfficialTest.cpp : Defines the entry point for the console application.
 //
 
-
-<<<<<<< HEAD
-
-#include "stdafx.h"
 // TODO: reference additional headers your program requires here
 #include <sstream>
 #include <string>
@@ -23,9 +19,9 @@
 #define FRAME_HEIGHT 960
 
 #define MAX_COUNT 400
-=======
+
 #include"OpenCVOfficialTest.h"
->>>>>>> 811243b618fec57651b456b5e69219b159eb2835
+
 using namespace cv;
 using namespace std;
 
