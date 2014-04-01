@@ -9,8 +9,8 @@ int main(int argc, char* argv[])
 //int _tmain(int argc, _TCHAR* argv[])
 {
 	OpenCVOfficialTest cvtest;
-	cvtest.opticalFlow();
-
+	//cvtest.opticalFlow();
+	cvtest.trackDemBlobs();
 
 	return 0;
 }

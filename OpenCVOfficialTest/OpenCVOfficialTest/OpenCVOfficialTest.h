@@ -22,7 +22,7 @@
 
 #define FRAME_WIDTH 640
 #define FRAME_HEIGHT 480
-
+#define THRESHOLD 15
 #define MAX_COUNT 400
 
 using namespace cv;
@@ -33,7 +33,11 @@ class OpenCVOfficialTest{
 	OpenCVOfficialTest();
 	void BarMovedTest();
 	void opticalFlow();
-	Mat frame, HSV;
+	void trackDemBlobs();
+	void drawObject(Mat &frame, int x, int y);
+	Mat frame, frame1, HSV;
+	int rMin,gMin,bMin;
+	int rMax,gMax,bMax;
 	VideoCapture capture;
 	int lowThreshold;
 	int ratio;

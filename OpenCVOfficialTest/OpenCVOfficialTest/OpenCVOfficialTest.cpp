@@ -33,6 +33,12 @@ OpenCVOfficialTest::OpenCVOfficialTest()
 	capture.open(0);
 	capture.set(CV_CAP_PROP_FRAME_WIDTH,FRAME_WIDTH);
 	capture.set(CV_CAP_PROP_FRAME_HEIGHT,FRAME_HEIGHT);
+	rMax = 255;
+	gMax = 255;
+	bMax = 255;
+	rMin = 210;
+	gMin = 140;
+	bMin = 0;
 
 }
 
@@ -83,6 +89,103 @@ void OpenCVOfficialTest::opticalFlow()
         swap(prev, curr);	
 		waitKey(10);
 	}
+}
+
+
+
+void on_trackbar( int, void* )
+{//This function gets called whenever a
+	// trackbar position is changed
+
+
+
+
+
+}
+
+
+void ClickedCallBack(int event, int x, int y, int flags, void* userdata)
+{
+	 	OpenCVOfficialTest *temp = (OpenCVOfficialTest*)userdata;
+	if(temp->frame.empty())
+		return;
+	Vec3b bgrPixel = temp->frame.at<Vec3b>(x, y);
+	if(x > FRAME_WIDTH || y > FRAME_HEIGHT)
+		return;
+	
+
+	if  ( event == EVENT_LBUTTONDOWN )
+	{
+		cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+
+			
+			
+			cout << bgrPixel[0] << " " << bgrPixel[1] << " " << bgrPixel[2] << endl;
+			temp->bMin = (bgrPixel[0] - THRESHOLD/2) > 0 ? bgrPixel[0] - THRESHOLD/2 : 0;
+			temp->gMin = (bgrPixel[1] - THRESHOLD/2) > 0 ? bgrPixel[1] - THRESHOLD/2 : 0;
+			temp->rMin = (bgrPixel[2] - THRESHOLD/2) > 0 ? bgrPixel[2] - THRESHOLD/2 : 0;
+
+			temp->bMax = (bgrPixel[0] + THRESHOLD/2) < 255 ? bgrPixel[0] + THRESHOLD/2 : 255;
+			temp->gMax = (bgrPixel[1] + THRESHOLD/2) < 255 ? bgrPixel[1] + THRESHOLD/2 : 255;
+			temp->rMax = (bgrPixel[2] + THRESHOLD/2) < 255 ? bgrPixel[2] + THRESHOLD/2 : 255;
+	}
+else if  ( event == EVENT_RBUTTONDOWN )
+{
+cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+}
+else if  ( event == EVENT_MBUTTONDOWN )
+{
+cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+}
+}
+
+void OpenCVOfficialTest::trackDemBlobs()
+{
+	Mat grayImg, colorImg;
+	vector< vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+
+	while(1)
+	{
+		capture >> frame1;
+
+		if(frame1.empty())
+			continue;
+		
+		frame1.copyTo(frame);
+
+		inRange(frame,Scalar(rMin,gMin,bMin),Scalar(rMax,gMax,bMax),grayImg);
+		namedWindow(windowName, CV_WINDOW_AUTOSIZE );
+		findContours(grayImg,contours,hierarchy,CV_RETR_CCOMP,CV_CHAIN_APPROX_SIMPLE);
+		int y = 0;
+		int x = 0;
+		for(int i = 0; i >= 0; i = hierarchy[i][0]) {
+
+		Moments moment = moments((cv::Mat)contours[i]);
+		double area = moment.m00;
+		if(moment.m10/area > x && moment.m01/area > y)
+		{
+		x = moment.m10/area;
+		y = moment.m01/area;
+		}
+		}
+		drawObject(frame,x,y);
+		 setMouseCallback(windowName, ClickedCallBack, this);
+		imshow(windowName, grayImg);
+		waitKey(10);
+	}
+}
+
+
+
+
+void OpenCVOfficialTest::drawObject(Mat &frame, int x, int y)
+{
+	if(x > FRAME_WIDTH || y > FRAME_HEIGHT)
+		return;
+
+	Point center(x, y);
+	circle( frame, center, 20, Scalar(0,0,255), -1, 8);
 }
 
 
