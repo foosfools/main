@@ -1,9 +1,8 @@
 // OpenCVOfficialTest.cpp : Defines the entry point for the console application.
 //
 
-#include <stdio.h>
-#include <tchar.h>
 
+<<<<<<< HEAD
 
 #include "stdafx.h"
 // TODO: reference additional headers your program requires here
@@ -24,39 +23,28 @@
 #define FRAME_HEIGHT 960
 
 #define MAX_COUNT 400
+=======
+#include"OpenCVOfficialTest.h"
+>>>>>>> 811243b618fec57651b456b5e69219b159eb2835
 using namespace cv;
 using namespace std;
 
-	Mat frame, HSV;
-	VideoCapture capture;
-	int lowThreshold = 50;
-	int ratio = 3;
-	string windowName = "BOB";
-
-void BarMovedTest();
-void BarMoved(int i, void * v);
-void opticalFlow();
-void probe();
-int _tmain(int argc, _TCHAR* argv[])
+OpenCVOfficialTest::OpenCVOfficialTest()
 {
+	this->lowThreshold = 50;
+	this->ratio = 3;
+	this->windowName = "BOB";
 	capture.open(0);
 	capture.set(CV_CAP_PROP_FRAME_WIDTH,FRAME_WIDTH);
 	capture.set(CV_CAP_PROP_FRAME_HEIGHT,FRAME_HEIGHT);
-	
-	opticalFlow();
-	
 
-	return 0;
 }
 
 
 
 
-
-
-void opticalFlow()
+void OpenCVOfficialTest::opticalFlow()
 {
-	 
 	//terminates over 20 iterations or when ep is < .03
 	TermCriteria termcrit(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS,20,0.03);
 
@@ -104,36 +92,19 @@ void opticalFlow()
 
 
 
-void BarMovedTest()
-{
 
-	while(1)
-	{
-		capture >> frame;
-
-		if(frame.empty())
-			continue;
-
-		 
-		namedWindow(windowName, CV_WINDOW_AUTOSIZE );
-		createTrackbar( "Min Threshold:", windowName, &lowThreshold, TMAX, BarMoved);
-		BarMoved(0,0);
-		waitKey(10);
-	}
-}
 
 
 
 void BarMoved(int i, void * v)
 {
-
-
-	cvtColor(frame, HSV, CV_BGR2GRAY);
+	OpenCVOfficialTest *temp = (OpenCVOfficialTest*)v;
+	cvtColor(temp->frame, temp->HSV, CV_BGR2GRAY);
 	vector<Vec3f> circles;
-	blur( HSV, HSV, Size(2,2));
+	blur( temp->HSV, temp->HSV, Size(2,2));
 	//Canny( HSV, HSV, lowThreshold, lowThreshold*ratio, 3);
 	  /// Apply the Hough Transform to find the circles
-    HoughCircles( HSV, circles, CV_HOUGH_GRADIENT, 2, HSV.rows/3, TMAX, 40 + lowThreshold, 40, 150 );
+    HoughCircles( temp->HSV, circles, CV_HOUGH_GRADIENT, 2, temp->HSV.rows/3, TMAX, 40 + temp->lowThreshold, 40, 150 );
 	
 
 	//for( size_t i = 0; i < circles.size(); i++ )
@@ -145,11 +116,33 @@ void BarMoved(int i, void * v)
 	 Point center(cvRound(circles[0][0]), cvRound(circles[0][1]));
 	   int radius = cvRound(circles[0][2]);
 	   // circle center
-	   circle( frame, center, 3, Scalar(0,255,0), -1, 8, 0 );
+	   circle( temp->frame, center, 3, Scalar(0,255,0), -1, 8, 0 );
 	   // circle outline
-	   circle( frame, center, radius, Scalar(0,0,255), 3, 8, 0 );
+	   circle( temp->frame, center, radius, Scalar(0,0,255), 3, 8, 0 );
 	}
 	// }
-	imshow(windowName, frame);
+	imshow(temp->windowName, temp->frame);
 
+}
+
+
+
+
+
+void OpenCVOfficialTest::BarMovedTest()
+{
+
+	while(1)
+	{
+		capture >> frame;
+
+		if(frame.empty())
+			continue;
+
+
+		namedWindow(windowName, CV_WINDOW_AUTOSIZE );
+		createTrackbar( "Min Threshold:", windowName, &lowThreshold, TMAX, BarMoved);
+		BarMoved(0,this);
+		waitKey(10);
+	}
 }
