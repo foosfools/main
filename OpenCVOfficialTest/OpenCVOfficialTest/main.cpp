@@ -10,6 +10,7 @@ int main(int argc, char* argv[])
 {
 	OpenCVOfficialTest cvtest;
 	//cvtest.opticalFlow();
+	cvtest.createTrackbars();
 	cvtest.trackDemBlobs();
 
 	return 0;

@@ -30,16 +30,18 @@ OpenCVOfficialTest::OpenCVOfficialTest()
 	this->lowThreshold = 50;
 	this->ratio = 3;
 	this->windowName = "BOB";
+	this->windowNameGray = "Gray";
 	capture.open(0);
 	capture.set(CV_CAP_PROP_FRAME_WIDTH,FRAME_WIDTH);
 	capture.set(CV_CAP_PROP_FRAME_HEIGHT,FRAME_HEIGHT);
 	rMax = 255;
 	gMax = 255;
 	bMax = 255;
-	rMin = 210;
-	gMin = 140;
+	rMin = 0;
+	gMin = 0;
 	bMin = 0;
-
+	track = false;
+	areaToMaximize = 0;
 }
 
 
@@ -103,31 +105,23 @@ void on_trackbar( int, void* )
 
 }
 
+void TrackCallBack(int state,  void* userdata)
+{
+	OpenCVOfficialTest *temp = (OpenCVOfficialTest*)userdata;
+}
+
+
 
 void ClickedCallBack(int event, int x, int y, int flags, void* userdata)
 {
 	 	OpenCVOfficialTest *temp = (OpenCVOfficialTest*)userdata;
-	if(temp->frame.empty())
-		return;
-	Vec3b bgrPixel = temp->frame.at<Vec3b>(x, y);
-	if(x > FRAME_WIDTH || y > FRAME_HEIGHT)
-		return;
+	//if(temp->frame.empty())
+		//return;
 	
-
 	if  ( event == EVENT_LBUTTONDOWN )
 	{
 		cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-
-			
-			
-			cout << bgrPixel[0] << " " << bgrPixel[1] << " " << bgrPixel[2] << endl;
-			temp->bMin = (bgrPixel[0] - THRESHOLD/2) > 0 ? bgrPixel[0] - THRESHOLD/2 : 0;
-			temp->gMin = (bgrPixel[1] - THRESHOLD/2) > 0 ? bgrPixel[1] - THRESHOLD/2 : 0;
-			temp->rMin = (bgrPixel[2] - THRESHOLD/2) > 0 ? bgrPixel[2] - THRESHOLD/2 : 0;
-
-			temp->bMax = (bgrPixel[0] + THRESHOLD/2) < 255 ? bgrPixel[0] + THRESHOLD/2 : 255;
-			temp->gMax = (bgrPixel[1] + THRESHOLD/2) < 255 ? bgrPixel[1] + THRESHOLD/2 : 255;
-			temp->rMax = (bgrPixel[2] + THRESHOLD/2) < 255 ? bgrPixel[2] + THRESHOLD/2 : 255;
+		temp->track = true;
 	}
 else if  ( event == EVENT_RBUTTONDOWN )
 {
@@ -142,42 +136,64 @@ cout << "Middle button of the mouse is clicked - position (" << x << ", " << y <
 void OpenCVOfficialTest::trackDemBlobs()
 {
 	Mat grayImg, colorImg;
-	vector< vector<Point> > contours;
-	vector<Vec4i> hierarchy;
-
+	int x = 0;
+	int y = 0;
 	while(1)
 	{
 		capture >> frame1;
-
+		  
 		if(frame1.empty())
 			continue;
-		
-		frame1.copyTo(frame);
 
-		inRange(frame,Scalar(rMin,gMin,bMin),Scalar(rMax,gMax,bMax),grayImg);
+		GaussianBlur(frame1, frame1, Size(11,11), 3);
+
+		inRange(frame1,Scalar(rMin,gMin,bMin),Scalar(rMax,gMax,bMax),grayImg);
+		  
+		Mat element = getStructuringElement( MORPH_ELLIPSE,
+                                       Size( 2*MORPH_ELLIPSE + 1, 2*MORPH_ELLIPSE+1 ),
+                                       Point( 1, 1 ) );
+
+		erode( grayImg, grayImg, element);
 		namedWindow(windowName, CV_WINDOW_AUTOSIZE );
-		findContours(grayImg,contours,hierarchy,CV_RETR_CCOMP,CV_CHAIN_APPROX_SIMPLE);
-		int y = 0;
-		int x = 0;
-		for(int i = 0; i >= 0; i = hierarchy[i][0]) {
+		namedWindow(windowNameGray, CV_WINDOW_AUTOSIZE );
+		setMouseCallback(windowName, ClickedCallBack, this);
 
-		Moments moment = moments((cv::Mat)contours[i]);
-		double area = moment.m00;
-		if(moment.m10/area > x && moment.m01/area > y)
+
+		if(track)
 		{
-		x = moment.m10/area;
-		y = moment.m01/area;
+			findColoredObject(grayImg, x, y);
+			drawObject(frame1,x,y);
 		}
-		}
-		drawObject(frame,x,y);
-		 setMouseCallback(windowName, ClickedCallBack, this);
-		imshow(windowName, grayImg);
+		imshow(windowName, frame1);
+		imshow(windowNameGray, grayImg);
 		waitKey(10);
 	}
 }
 
 
+void OpenCVOfficialTest::findColoredObject(Mat &grayImg, int &x, int &y)
+{
+	vector< vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+	Mat temp;
+	grayImg.copyTo(temp);
+	areaToMaximize = 0;
 
+	findContours(temp,contours,hierarchy,CV_RETR_CCOMP,CV_CHAIN_APPROX_SIMPLE);
+
+		for(int i = 0; i >= 0; i = hierarchy[i][0]) {
+
+			Moments moment = moments((cv::Mat)contours[i]);
+			double area = moment.m00;
+			//maximization loop
+			if(area > areaToMaximize)
+			{
+			areaToMaximize = area;
+			x = moment.m10/area;
+			y = moment.m01/area;
+			}
+		}
+}
 
 void OpenCVOfficialTest::drawObject(Mat &frame, int x, int y)
 {
@@ -244,4 +260,27 @@ void OpenCVOfficialTest::BarMovedTest()
 		BarMoved(0,this);
 		waitKey(10);
 	}
+}
+
+
+void OpenCVOfficialTest::createTrackbars(){
+	//create window for trackbars
+	string trackbarWindowName = "Track Bars";
+	//createButton("Track",TrackCallBack, this, CV_PUSH_BUTTON, 0);
+    namedWindow(trackbarWindowName,0);
+	//create memory to store trackbar name on window
+	char TrackbarName[50];
+	sprintf( TrackbarName, "bMin", bMin);
+	sprintf( TrackbarName, "bMax", bMax);
+	sprintf( TrackbarName, "rMin", rMin);
+	sprintf( TrackbarName, "rMax", rMax);
+	sprintf( TrackbarName, "gMin", gMin);
+	sprintf( TrackbarName, "gMax", gMax);
+    createTrackbar( "bMin", trackbarWindowName, &bMin, bMax, on_trackbar );
+    createTrackbar( "bMax", trackbarWindowName, &bMax, bMax, on_trackbar );
+    createTrackbar( "rMin", trackbarWindowName, &rMin, rMax, on_trackbar );
+    createTrackbar( "rMax", trackbarWindowName, &rMax, rMax, on_trackbar );
+    createTrackbar( "gMin", trackbarWindowName, &gMin, gMax, on_trackbar );
+    createTrackbar( "gMax", trackbarWindowName, &gMax, gMax, on_trackbar );
+
 }

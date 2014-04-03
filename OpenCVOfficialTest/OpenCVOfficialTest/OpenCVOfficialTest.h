@@ -34,7 +34,10 @@ class OpenCVOfficialTest{
 	void BarMovedTest();
 	void opticalFlow();
 	void trackDemBlobs();
+	void findColoredObject(Mat &grayImg, int &x, int &y);
 	void drawObject(Mat &frame, int x, int y);
+	void createTrackbars();
+
 	Mat frame, frame1, HSV;
 	int rMin,gMin,bMin;
 	int rMax,gMax,bMax;
@@ -42,7 +45,9 @@ class OpenCVOfficialTest{
 	int lowThreshold;
 	int ratio;
 	string windowName;
-
+	string windowNameGray;
+	bool track;
+	int areaToMaximize;
 
 };
 
