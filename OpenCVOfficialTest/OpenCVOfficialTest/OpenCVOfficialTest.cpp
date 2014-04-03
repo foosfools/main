@@ -14,10 +14,8 @@
 
 
 #define TMAX 100
-
 #define FRAME_WIDTH 1280
 #define FRAME_HEIGHT 960
-
 #define MAX_COUNT 400
 
 #include"OpenCVOfficialTest.h"
@@ -45,8 +43,80 @@ OpenCVOfficialTest::OpenCVOfficialTest()
 }
 
 
+#pragma region
+void on_trackbar( int, void* )
+{//This function gets called whenever a
+	// trackbar position is changed
 
 
+
+
+
+}
+
+void TrackCallBack(int state,  void* userdata)
+{
+	OpenCVOfficialTest *temp = (OpenCVOfficialTest*)userdata;
+}
+
+
+
+void ClickedCallBack(int event, int x, int y, int flags, void* userdata)
+{
+	 	OpenCVOfficialTest *temp = (OpenCVOfficialTest*)userdata;
+	//if(temp->frame.empty())
+		//return;
+	
+	if  ( event == EVENT_LBUTTONDOWN )
+	{
+		cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+		temp->track = true;
+	}
+else if  ( event == EVENT_RBUTTONDOWN )
+{
+cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+}
+else if  ( event == EVENT_MBUTTONDOWN )
+{
+cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+}
+}
+
+
+void BarMoved(int i, void * v)
+{
+	OpenCVOfficialTest *temp = (OpenCVOfficialTest*)v;
+	cvtColor(temp->frame, temp->HSV, CV_BGR2GRAY);
+	vector<Vec3f> circles;
+	blur( temp->HSV, temp->HSV, Size(2,2));
+	//Canny( HSV, HSV, lowThreshold, lowThreshold*ratio, 3);
+	  /// Apply the Hough Transform to find the circles
+    HoughCircles( temp->HSV, circles, CV_HOUGH_GRADIENT, 2, temp->HSV.rows/3, TMAX, 40 + temp->lowThreshold, 40, 150 );
+	
+
+	//for( size_t i = 0; i < circles.size(); i++ )
+	//{
+	  // Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+	 //  int radius = cvRound(circles[i][2]);
+	if(!circles.empty())
+	{
+	 Point center(cvRound(circles[0][0]), cvRound(circles[0][1]));
+	   int radius = cvRound(circles[0][2]);
+	   // circle center
+	   circle( temp->frame, center, 3, Scalar(0,255,0), -1, 8, 0 );
+	   // circle outline
+	   circle( temp->frame, center, radius, Scalar(0,0,255), 3, 8, 0 );
+	}
+	// }
+	imshow(temp->windowName, temp->frame);
+
+}
+#pragma endregion callback Functions for GUI
+
+
+
+
+#pragma region
 void OpenCVOfficialTest::opticalFlow()
 {
 	//terminates over 20 iterations or when ep is < .03
@@ -92,47 +162,12 @@ void OpenCVOfficialTest::opticalFlow()
 		waitKey(10);
 	}
 }
-
-
-
-void on_trackbar( int, void* )
-{//This function gets called whenever a
-	// trackbar position is changed
+#pragma endregion Optical flow
 
 
 
 
-
-}
-
-void TrackCallBack(int state,  void* userdata)
-{
-	OpenCVOfficialTest *temp = (OpenCVOfficialTest*)userdata;
-}
-
-
-
-void ClickedCallBack(int event, int x, int y, int flags, void* userdata)
-{
-	 	OpenCVOfficialTest *temp = (OpenCVOfficialTest*)userdata;
-	//if(temp->frame.empty())
-		//return;
-	
-	if  ( event == EVENT_LBUTTONDOWN )
-	{
-		cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-		temp->track = true;
-	}
-else if  ( event == EVENT_RBUTTONDOWN )
-{
-cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-}
-else if  ( event == EVENT_MBUTTONDOWN )
-{
-cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-}
-}
-
+#pragma region
 void OpenCVOfficialTest::trackDemBlobs()
 {
 	Mat grayImg, colorImg;
@@ -169,6 +204,9 @@ void OpenCVOfficialTest::trackDemBlobs()
 		waitKey(10);
 	}
 }
+
+
+
 
 
 void OpenCVOfficialTest::findColoredObject(Mat &grayImg, int &x, int &y)
@@ -211,34 +249,7 @@ void OpenCVOfficialTest::drawObject(Mat &frame, int x, int y)
 
 
 
-void BarMoved(int i, void * v)
-{
-	OpenCVOfficialTest *temp = (OpenCVOfficialTest*)v;
-	cvtColor(temp->frame, temp->HSV, CV_BGR2GRAY);
-	vector<Vec3f> circles;
-	blur( temp->HSV, temp->HSV, Size(2,2));
-	//Canny( HSV, HSV, lowThreshold, lowThreshold*ratio, 3);
-	  /// Apply the Hough Transform to find the circles
-    HoughCircles( temp->HSV, circles, CV_HOUGH_GRADIENT, 2, temp->HSV.rows/3, TMAX, 40 + temp->lowThreshold, 40, 150 );
-	
 
-	//for( size_t i = 0; i < circles.size(); i++ )
-	//{
-	  // Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-	 //  int radius = cvRound(circles[i][2]);
-	if(!circles.empty())
-	{
-	 Point center(cvRound(circles[0][0]), cvRound(circles[0][1]));
-	   int radius = cvRound(circles[0][2]);
-	   // circle center
-	   circle( temp->frame, center, 3, Scalar(0,255,0), -1, 8, 0 );
-	   // circle outline
-	   circle( temp->frame, center, radius, Scalar(0,0,255), 3, 8, 0 );
-	}
-	// }
-	imshow(temp->windowName, temp->frame);
-
-}
 
 
 
@@ -284,3 +295,4 @@ void OpenCVOfficialTest::createTrackbars(){
     createTrackbar( "gMax", trackbarWindowName, &gMax, gMax, on_trackbar );
 
 }
+#pragma endregion color tracking
