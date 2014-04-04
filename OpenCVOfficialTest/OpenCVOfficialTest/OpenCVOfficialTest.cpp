@@ -32,6 +32,8 @@ OpenCVOfficialTest::OpenCVOfficialTest()
 	capture.open(0);
 	capture.set(CV_CAP_PROP_FRAME_WIDTH,FRAME_WIDTH);
 	capture.set(CV_CAP_PROP_FRAME_HEIGHT,FRAME_HEIGHT);
+	cout << capture.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
+	cout << capture.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
 	rMax = 255;
 	gMax = 255;
 	bMax = 255;
@@ -218,6 +220,9 @@ void OpenCVOfficialTest::findColoredObject(Mat &grayImg, int &x, int &y)
 	areaToMaximize = 0;
 
 	findContours(temp,contours,hierarchy,CV_RETR_CCOMP,CV_CHAIN_APPROX_SIMPLE);
+	//need this to prevent crash
+		if(!hierarchy.size())
+			return;
 
 		for(int i = 0; i >= 0; i = hierarchy[i][0]) {
 
