@@ -37,7 +37,7 @@ class OpenCVOfficialTest{
 	void findColoredObject(Mat &grayImg, int &x, int &y);
 	void drawObject(Mat &frame, int x, int y);
 	void createTrackbars();
-
+	void InitCircle();
 	Mat frame, frame1, HSV;
 	int rMin,gMin,bMin;
 	int rMax,gMax,bMax;
