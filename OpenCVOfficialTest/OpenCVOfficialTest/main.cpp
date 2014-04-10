@@ -14,6 +14,6 @@ int main(int argc, char* argv[])
 	//cvtest.opticalFlow();
 	//cvtest.createTrackbars();
 	//cvtest.trackDemBlobs();
-	cvtest.BarMovedTest();
+	cvtest.Init();
 	return 0;
 }

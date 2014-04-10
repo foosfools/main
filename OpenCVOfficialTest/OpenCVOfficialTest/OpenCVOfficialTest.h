@@ -23,6 +23,9 @@
 #define THRESHOLD 15
 #define MAX_COUNT 400
 #define CENTER_TO_GOAL 60.0/19.0
+//number of elements to average over during initialization
+#define N_ELEMENTS 10
+
 using namespace cv;
 using namespace std;
 
@@ -36,9 +39,11 @@ public:
 	void drawObject(Mat &frame, int x, int y);
 	void createTrackbars();
 	void Init();
-	void InitCircle();
+	//nCircles keeps track of how many circles have been counted
+	void InitCircle(int & nCircles);
 	void FindCorners();
-	void InitLines();
+	//nLines keeps track of how many lines have been counted
+	void InitLines(int & nLines);
 	Mat frame, frame1, HSV;
 	int rMin, gMin, bMin;
 	int rMax, gMax, bMax;
@@ -50,9 +55,20 @@ public:
 	bool track;
 	int areaToMaximize;
 private:
-	Vec2f getGoodLine(vector<Vec2f> lines);
+	Vec2f getGoodLine(vector<Vec2f> lines, int &nLines);
+	//is false until an average is taken
 	bool circleInit;
 	bool lineInit;
+	//converts a line from polar to cartesian
+	Vec4i convertToCartesian(double rho, double theta, int length);
+	//list of circles to average during initialization
+	Vec3f circleList[N_ELEMENTS];
+	//list of lines to average during initialization
+	Vec2f lineList[N_ELEMENTS];
+	//averages out lines from initLines
+	Vec2f AverageOutLines(Vec2f lineList[]);
+	//averages out circles from initCircles
+	Vec3f AverageOutCircles(Vec3f circleList[]);
 };
 
 #endif

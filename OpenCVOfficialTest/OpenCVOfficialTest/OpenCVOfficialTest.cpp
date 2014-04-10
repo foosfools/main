@@ -44,8 +44,6 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	bMin = 0;
 	track = false;
 	areaToMaximize = 0;
-	circleInit = false;
-	lineInit = false;
 }
 
 #pragma region
@@ -148,28 +146,50 @@ void OpenCVOfficialTest::FindCorners() {
 }
 
 void OpenCVOfficialTest::Init() {
-	//loop until both lines and circles are ready
-	while(!circleInit && !lineInit)
+
+	//keeps count of how many lines and circles have been found
+	int nLines = 0;
+	int nCircles = 0;
+		//loop until both lines and circles are ready
+	while(nLines < 10 || nCircles < 10)
 	{
-	blur(this->HSV, this->HSV, Size(2, 2));
-	cvtColor(this->frame, this->HSV, CV_BGR2GRAY);
+		capture >> frame;
 
-	if(!circleInit)
-	InitCircle();
+		if (frame.empty())
+			continue;
 
-	if(!lineInit)
-	InitLines();
 
-	imshow(this->windowName, this->frame);
+
+
+		blur(this->HSV, this->HSV, Size(2, 2));
+		cvtColor(this->frame, this->HSV, CV_BGR2GRAY);
+
+		if(nCircles < 10)
+		InitCircle(nCircles);
+
+		if(nLines < 10)
+		InitLines(nLines);
+
+
+
+
+
+
+		//display image
+		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+		imshow(this->windowName, this->frame);
+
+		waitKey(10);
 	}
 }
 
-void OpenCVOfficialTest::InitCircle() {
+void OpenCVOfficialTest::InitCircle(int & nCircles) {
 
 	// Find the corners
 	//FindCorners();
 	vector<Vec3f> circles;
-
+	//initialized once. Keeps track of number of circles to average
+	static int circleCount = 0;
 	/// Apply the Hough Transform to find the circles
 	HoughCircles(this->HSV, circles, CV_HOUGH_GRADIENT, 2, this->HSV.rows / 3,
 	TMAX, 40 + this->lowThreshold, 40, 150);
@@ -181,6 +201,10 @@ void OpenCVOfficialTest::InitCircle() {
 	if (!circles.empty()) {
 		Point center(cvRound(circles[0][0]), cvRound(circles[0][1]));
 		int radius = cvRound(circles[0][2]);
+		//add to list of circles
+		circleList[nCircles] = circles[0];
+		nCircles++;
+
 		// circle center
 		circle(this->frame, center, 3, Scalar(0, 255, 0), -1, 8, 0);
 		// circle outline
@@ -188,58 +212,44 @@ void OpenCVOfficialTest::InitCircle() {
 	}
 }
 
-void OpenCVOfficialTest::InitLines() {
+void OpenCVOfficialTest::InitLines(int & nLines) {
 	vector<Vec2f> lines;
-	//HoughLinesP(this->HSV, lines, 1, .1, 150, FRAME_WIDTH / 4, 30);
 	Canny(this->HSV, this->HSV, 50, 200, 3);
-	HoughLinesP(this->HSV, lines, 1, .1, 150);
-		//just for drawing :)
-			for (size_t i = 0; i < lines.size(); i++) {
-				double theta = lines[0][1];
-				double rho = lines[0][0];
-				Point linePt1, linePt2;
-
-				double xSc = cos(theta);
-				double ySc = sin(theta);
-
-				double x = xSc * rho;
-				double y = ySc * rho;
-
-				theta = theta - CV_PI / 2.0;
-				xSc = cos(theta);
-				ySc = sin(theta);
-				linePt1.x = cvRound(200 * xSc + x);
-				linePt1.y = cvRound(200 * (ySc) + y);
-
-				linePt2.x = cvRound(-200 * xSc + x);
-				linePt2.y = cvRound(-200 * (ySc) + y);
-
-				line(this->frame, linePt1, linePt2, Scalar(0, 0, 255), 10, CV_AA);
-			}
+	HoughLines(this->HSV, lines, 1, .1, 70);
 
 	//find a good line
-	Vec2f goodLine = getGoodLine(lines);
+	Vec2f goodLine = getGoodLine(lines, nLines);
 }
 
 
 
 
-Vec2f OpenCVOfficialTest::getGoodLine(vector<Vec2f> lines)
+
+
+Vec2f OpenCVOfficialTest::getGoodLine(vector<Vec2f> lines, int &nLines)
 {
 	double theta = 0;//CV_PI/2;
 	double thresh = (20.0*CV_PI)/180.0;
-	Vec2f line;
+	Vec2f goodLine;
 
 	//minimizes theta to find a good line
 	for (size_t i = 0; i < lines.size(); i++) {
+
 		//if theta is within the threshold, then return the line
 		if(abs(lines[i][1] - theta) < thresh)
 		{
-		line = lines[i];
+		goodLine = lines[i];
+		//add line to list
+		lineList[nLines] = goodLine;
+		nLines++;
+
+		Vec4i linePts = this->convertToCartesian(goodLine[0], goodLine[1], 400);
+		//draw line to frame
+		line(this->frame, Point(linePts[0], linePts[1]), Point(linePts[2], linePts[3]), Scalar(0, 0, 255), 10, CV_AA);
 		break;
 		}
 	}
-	return line;
+	return goodLine;
 }
 
 
@@ -328,7 +338,6 @@ void OpenCVOfficialTest::BarMovedTest() {
 			continue;
 
 		//createTrackbar( "Min Threshold:", windowName, &lowThreshold, TMAX, InitCircle);
-		this->Init();
 		waitKey(10);
 	}
 }
@@ -355,3 +364,65 @@ void OpenCVOfficialTest::createTrackbars() {
 
 }
 #pragma endregion color tracking
+
+#pragma region
+Vec4i OpenCVOfficialTest::convertToCartesian(double rho, double theta, int length)
+{
+				Point linePt1, linePt2;
+				Vec4i tempVec;
+				double xSc = cos(theta);
+				double ySc = sin(theta);
+
+				double x = xSc * rho;
+				double y = ySc * rho;
+
+				theta = theta - CV_PI / 2.0;
+				xSc = cos(theta);
+				ySc = sin(theta);
+				tempVec[0] = cvRound(length * xSc + x);
+				tempVec[1]  = cvRound(length * (ySc) + y);
+
+				tempVec[2] = cvRound(-length * xSc + x);
+				tempVec[3]  = cvRound(-length * (ySc) + y);
+
+				return tempVec;
+}
+
+
+
+	//averages out lines from initLines
+Vec2f AverageOutLines(Vec2f lineList[])
+{
+	float sum0 = 0;
+	float sum1 = 0;
+	Vec2f aveVec;
+	for(int i = 0; i < N_ELEMENTS; i++)
+	{
+		sum0 += lineList[i][0];
+		sum1 += lineList[i][1];
+	}
+	aveVec[0] = sum0/(N_ELEMENTS);
+	aveVec[1] = sum1/(N_ELEMENTS);
+	return aveVec;
+}
+
+
+	//averages out circles from initCircles
+Vec3f AverageOutCircles(Vec3f circleList[])
+{
+	float sum0 = 0;
+	float sum1 = 0;
+	float sum2 = 0;
+	Vec3f aveVec;
+	for(int i = 0; i < N_ELEMENTS; i++)
+	{
+		sum0 += circleList[i][0];
+		sum1 += circleList[i][1];
+		sum2 += circleList[i][2];
+	}
+	aveVec[0] = sum0/(N_ELEMENTS);
+	aveVec[1] = sum1/(N_ELEMENTS);
+	aveVec[2] = sum2/(N_ELEMENTS);
+	return aveVec;
+}
+#pragma endregion private helper methods
