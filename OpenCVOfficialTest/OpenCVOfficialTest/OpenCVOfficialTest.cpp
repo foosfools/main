@@ -34,8 +34,8 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	capture.open(0);
 	capture.set(CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
 	capture.set(CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
-	cout << capture.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
-	cout << capture.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
+	// cout << capture.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
+	// cout << capture.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
 	rMax = 255;
 	gMax = 255;
 	bMax = 255;
@@ -44,6 +44,8 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	bMin = 0;
 	track = false;
 	areaToMaximize = 0;
+	circleInit = false;
+	lineInit = false;
 }
 
 #pragma region
@@ -121,19 +123,56 @@ void OpenCVOfficialTest::opticalFlow() {
 #pragma endregion Optical flow
 
 #pragma region
-void OpenCVOfficialTest::InitCircle() {
+
+void OpenCVOfficialTest::FindCorners() {
+
+	/// Parameters for Shi-Tomasi algorithm
+	vector<Point2f> corners;
+	int maxCorners = 2;
+	double qualityLevel = 0.01;
+	double minDistance = 500;
+	int blockSize = 3;
+	bool useHarrisDetector = false;
+	double k = 0.04;
+
 	cvtColor(this->frame, this->HSV, CV_BGR2GRAY);
-	vector<Vec3f> circles;
-	vector<Vec2f> lines;
-	Mat tempHSV;
-	this->HSV.copyTo(tempHSV);
+
+	/// Apply corner detection
+	goodFeaturesToTrack(this->HSV, corners, maxCorners, qualityLevel,
+			minDistance, Mat(), blockSize, useHarrisDetector, k);
+
+	int r = 4;
+	for (int i = 0; i < corners.size(); i++) {
+		circle(this->frame, corners[i], r, Scalar(0, 0, 255), 3, 8, 0);
+	}
+}
+
+void OpenCVOfficialTest::Init() {
+	//loop until both lines and circles are ready
+	while(!circleInit && !lineInit)
+	{
 	blur(this->HSV, this->HSV, Size(2, 2));
+	cvtColor(this->frame, this->HSV, CV_BGR2GRAY);
+
+	if(!circleInit)
+	InitCircle();
+
+	if(!lineInit)
+	InitLines();
+
+	imshow(this->windowName, this->frame);
+	}
+}
+
+void OpenCVOfficialTest::InitCircle() {
+
+	// Find the corners
+	//FindCorners();
+	vector<Vec3f> circles;
 
 	/// Apply the Hough Transform to find the circles
 	HoughCircles(this->HSV, circles, CV_HOUGH_GRADIENT, 2, this->HSV.rows / 3,
 	TMAX, 40 + this->lowThreshold, 40, 150);
-	Canny(tempHSV, tempHSV, 50, 200, 3);
-	HoughLines(tempHSV, lines, 1, .1, 150);
 
 	//for( size_t i = 0; i < circles.size(); i++ )
 	//{
@@ -147,36 +186,63 @@ void OpenCVOfficialTest::InitCircle() {
 		// circle outline
 		circle(this->frame, center, radius, Scalar(0, 0, 255), 3, 8, 0);
 	}
+}
 
-	if (!lines.empty()) {
+void OpenCVOfficialTest::InitLines() {
+	vector<Vec2f> lines;
+	//HoughLinesP(this->HSV, lines, 1, .1, 150, FRAME_WIDTH / 4, 30);
+	Canny(this->HSV, this->HSV, 50, 200, 3);
+	HoughLinesP(this->HSV, lines, 1, .1, 150);
+		//just for drawing :)
+			for (size_t i = 0; i < lines.size(); i++) {
+				double theta = lines[0][1];
+				double rho = lines[0][0];
+				Point linePt1, linePt2;
 
-		for (size_t i = 0; i < lines.size(); i++) {
-			double theta = lines[0][1];
-			double rho = lines[0][0];
-			Point linePt1, linePt2;
+				double xSc = cos(theta);
+				double ySc = sin(theta);
 
-			double xSc = cos(theta);
-			double ySc = sin(theta);
+				double x = xSc * rho;
+				double y = ySc * rho;
 
-			double x = xSc * rho;
-			double y = ySc * rho;
+				theta = theta - CV_PI / 2.0;
+				xSc = cos(theta);
+				ySc = sin(theta);
+				linePt1.x = cvRound(200 * xSc + x);
+				linePt1.y = cvRound(200 * (ySc) + y);
 
-			theta = theta - CV_PI / 2.0;
-			xSc = cos(theta);
-			ySc = sin(theta);
-			linePt1.x = cvRound(200 * xSc + x);
-			linePt1.y = cvRound(200 * (ySc) + y);
+				linePt2.x = cvRound(-200 * xSc + x);
+				linePt2.y = cvRound(-200 * (ySc) + y);
 
-			linePt2.x = cvRound(-200 * xSc + x);
-			linePt2.y = cvRound(-200 * (ySc) + y);
+				line(this->frame, linePt1, linePt2, Scalar(0, 0, 255), 10, CV_AA);
+			}
 
-			line(this->frame, linePt1, linePt2, Scalar(0, 0, 255), 10, CV_AA);
+	//find a good line
+	Vec2f goodLine = getGoodLine(lines);
+}
+
+
+
+
+Vec2f OpenCVOfficialTest::getGoodLine(vector<Vec2f> lines)
+{
+	double theta = 0;//CV_PI/2;
+	double thresh = (20.0*CV_PI)/180.0;
+	Vec2f line;
+
+	//minimizes theta to find a good line
+	for (size_t i = 0; i < lines.size(); i++) {
+		//if theta is within the threshold, then return the line
+		if(abs(lines[i][1] - theta) < thresh)
+		{
+		line = lines[i];
+		break;
 		}
 	}
-	// }
-	imshow(this->windowName, this->frame);
-
+	return line;
 }
+
+
 #pragma endregion init
 
 #pragma region
@@ -226,7 +292,7 @@ void OpenCVOfficialTest::findColoredObject(Mat &grayImg, int &x, int &y) {
 
 	findContours(temp, contours, hierarchy, CV_RETR_CCOMP,
 			CV_CHAIN_APPROX_SIMPLE);
-	//need this to prevent crash
+//need this to prevent crash
 	if (!hierarchy.size())
 		return;
 
@@ -253,25 +319,26 @@ void OpenCVOfficialTest::drawObject(Mat &frame, int x, int y) {
 
 void OpenCVOfficialTest::BarMovedTest() {
 
+	namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+
 	while (1) {
 		capture >> frame;
 
 		if (frame.empty())
 			continue;
 
-		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
 		//createTrackbar( "Min Threshold:", windowName, &lowThreshold, TMAX, InitCircle);
-		this->InitCircle();
+		this->Init();
 		waitKey(10);
 	}
 }
 
 void OpenCVOfficialTest::createTrackbars() {
-	//create window for trackbars
+//create window for trackbars
 	string trackbarWindowName = "Track Bars";
-	//createButton("Track",TrackCallBack, this, CV_PUSH_BUTTON, 0);
+//createButton("Track",TrackCallBack, this, CV_PUSH_BUTTON, 0);
 	namedWindow(trackbarWindowName, 0);
-	//create memory to store trackbar name on window
+//create memory to store trackbar name on window
 	char TrackbarName[50];
 	sprintf(TrackbarName, "bMin", bMin);
 	sprintf(TrackbarName, "bMax", bMax);

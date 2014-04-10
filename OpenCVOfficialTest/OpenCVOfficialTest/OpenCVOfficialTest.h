@@ -1,9 +1,7 @@
 #ifndef _OPENCVOFFICIALTEST_H
 #define _OPENCVOFFICIALTEST_H
 
-
 //#include <tchar.h>
-
 
 //#include "stdafx.h"
 // TODO: reference additional headers your program requires here
@@ -24,12 +22,12 @@
 #define FRAME_HEIGHT 480
 #define THRESHOLD 15
 #define MAX_COUNT 400
-
+#define CENTER_TO_GOAL 60.0/19.0
 using namespace cv;
 using namespace std;
 
-class OpenCVOfficialTest{
-	public:
+class OpenCVOfficialTest {
+public:
 	OpenCVOfficialTest();
 	void BarMovedTest();
 	void opticalFlow();
@@ -37,10 +35,13 @@ class OpenCVOfficialTest{
 	void findColoredObject(Mat &grayImg, int &x, int &y);
 	void drawObject(Mat &frame, int x, int y);
 	void createTrackbars();
+	void Init();
 	void InitCircle();
+	void FindCorners();
+	void InitLines();
 	Mat frame, frame1, HSV;
-	int rMin,gMin,bMin;
-	int rMax,gMax,bMax;
+	int rMin, gMin, bMin;
+	int rMax, gMax, bMax;
 	VideoCapture capture;
 	int lowThreshold;
 	int ratio;
@@ -48,10 +49,11 @@ class OpenCVOfficialTest{
 	string windowNameGray;
 	bool track;
 	int areaToMaximize;
-
+private:
+	Vec2f getGoodLine(vector<Vec2f> lines);
+	bool circleInit;
+	bool lineInit;
 };
 
-
 #endif
-
 
