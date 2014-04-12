@@ -31,19 +31,26 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	this->ratio = 3;
 	this->windowName = "BOB";
 	this->windowNameGray = "Gray";
+	this->addRemovePt = false;
 	capture.open(0);
 	capture.set(CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
 	capture.set(CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
 	// cout << capture.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
 	// cout << capture.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
-	rMax = 255;
-	gMax = 255;
-	bMax = 255;
-	rMin = 0;
-	gMin = 0;
-	bMin = 0;
+	rMax = 93;
+	gMax = 120;
+	bMax = 246;
+	rMin = 66;
+	gMin = 59;
+	bMin = 165;
 	track = false;
 	areaToMaximize = 0;
+	//////////LOW LIGHT 920 ///////////////
+	//rmin, gmin, bmin: 15, 52, 100
+	//rmax, gmax, bmax: 46, 120, 246
+	//
+	//rmin, gmin, bmin: 66, 59, 165
+	//rmax, gmax, bmax: 93, 120, 246
 }
 
 #pragma region
@@ -74,9 +81,98 @@ void ClickedCallBack(int event, int x, int y, int flags, void* userdata) {
 	}
 }
 
+void onMouse(int event, int x, int y, int /*flags*/, void* userdata) {
+	OpenCVOfficialTest *temp = (OpenCVOfficialTest*) userdata;
+	if (event == CV_EVENT_LBUTTONDOWN) {
+		temp->point = Point2f((float) x, (float) y);
+		temp->addRemovePt = true;
+	}
+}
+
 #pragma endregion callback Functions for GUI
 
 #pragma region
+
+void OpenCVOfficialTest::testOpticalFlow() {
+	TermCriteria termcrit(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 20, 0.03);
+	Size subPixWinSize(10, 10), winSize(31, 31);
+	bool needToInit = false;
+
+	namedWindow("LK Demo", 1);
+	setMouseCallback("LK Demo", onMouse, this);
+
+	Mat gray, prevGray, image;
+	vector<Point2f> points[2];
+
+	while (1) {
+		capture >> frame1;
+		if (frame1.empty()) {
+			continue;
+		}
+
+		frame1.copyTo(image);
+		cvtColor(image, gray, COLOR_BGR2GRAY);
+
+		if (needToInit) {
+			// automatic initialization
+			goodFeaturesToTrack(gray, points[1], MAX_COUNT, 0.01, 10, Mat(), 3,
+					0, 0.04);
+			cornerSubPix(gray, points[1], subPixWinSize, Size(-1, -1),
+					termcrit);
+			addRemovePt = false;
+		} else if (!points[0].empty()) {
+			vector<uchar> status;
+			vector<float> err;
+			if (prevGray.empty())
+				gray.copyTo(prevGray);
+			calcOpticalFlowPyrLK(prevGray, gray, points[0], points[1], status,
+					err, winSize, 3, termcrit, 0, 0.001);
+			size_t i, k;
+			for (i = k = 0; i < points[1].size(); i++) {
+				if (addRemovePt) {
+					if (norm(point - points[1][i]) <= 5) {
+						addRemovePt = false;
+						continue;
+					}
+				}
+
+				if (!status[i])
+					continue;
+
+				points[1][k++] = points[1][i];
+				circle(image, points[1][i], 3, Scalar(0, 255, 0), -1, 8);
+			}
+			points[1].resize(k);
+		}
+
+		if (addRemovePt && points[1].size() < (size_t) MAX_COUNT) {
+			vector<Point2f> tmp;
+			tmp.push_back(point);
+			cornerSubPix(gray, tmp, winSize, cvSize(-1, -1), termcrit);
+			points[1].push_back(tmp[0]);
+			addRemovePt = false;
+		}
+
+		needToInit = false;
+		imshow("LK Demo", image);
+
+		char c = (char) waitKey(10);
+		if (c == 27)
+			break;
+		switch (c) {
+		case 'r':
+			needToInit = true;
+			break;
+		case 'c':
+			points[0].clear();
+			points[1].clear();
+			break;
+		}
+
+		std::swap(points[1], points[0]);
+		cv::swap(prevGray, gray);
+	}
+}
 void OpenCVOfficialTest::opticalFlow() {
 	//terminates over 20 iterations or when ep is < .03
 	TermCriteria termcrit(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 20, 0.03);
@@ -150,30 +246,21 @@ void OpenCVOfficialTest::Init() {
 	//keeps count of how many lines and circles have been found
 	int nLines = 0;
 	int nCircles = 0;
-		//loop until both lines and circles are ready
-	while(nLines < 10 || nCircles < 10)
-	{
+	//loop until both lines and circles are ready
+	while (nLines < N_ELEMENTS || nCircles < N_ELEMENTS) {
 		capture >> frame;
 
 		if (frame.empty())
 			continue;
 
-
-
-
 		blur(this->HSV, this->HSV, Size(2, 2));
 		cvtColor(this->frame, this->HSV, CV_BGR2GRAY);
 
-		if(nCircles < 10)
-		InitCircle(nCircles);
+		if (nCircles < N_ELEMENTS)
+			InitCircle(nCircles);
 
-		if(nLines < 10)
-		InitLines(nLines);
-
-
-
-
-
+		if (nLines < N_ELEMENTS)
+			InitLines(nLines);
 
 		//display image
 		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
@@ -181,6 +268,40 @@ void OpenCVOfficialTest::Init() {
 
 		waitKey(10);
 	}
+	//get average circle and ine dimensions
+	aveCircle = averageOutCircles();
+	aveLine = averageOutLines();
+	cout << "theta " << aveLine[1] << endl;
+
+	while (1) {
+
+		Vec4i tempLine = convertToCartesian(200.0, aveLine[1], 200);
+		line(this->frame, Point(tempLine[0], tempLine[1]),
+				Point(tempLine[2], tempLine[3]), Scalar(0, 0, 255), 10, CV_AA);
+		circle(this->frame, Point(cvRound(aveCircle[0]), cvRound(aveCircle[1])),
+				cvRound(aveCircle[2]), Scalar(0, 0, 255), 3, 8, 0);
+		//display image
+		calcGoalPosition(aveLine, aveCircle);
+		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+		imshow(this->windowName, this->frame);
+		waitKey(10);
+	}
+}
+
+void OpenCVOfficialTest::calcGoalPosition(Vec2f line, Vec3f circle) {
+	//create a unit vector
+	float theta = line[1] + CV_PI / 2;
+	Vec2f unitVec(sin(theta), -cos(theta));
+
+	int diam = cvRound(circle[2]) * 2;
+	int scalingFactor = (diam * 60) / 20;
+
+	Point goaliePos;
+	goaliePos.x = scalingFactor * unitVec[0] + cvRound(circle[0]);
+	goaliePos.y = scalingFactor * unitVec[1] + cvRound(circle[1]);
+
+	drawObject(frame, goaliePos.x, goaliePos.y);
+
 }
 
 void OpenCVOfficialTest::InitCircle(int & nCircles) {
@@ -188,8 +309,7 @@ void OpenCVOfficialTest::InitCircle(int & nCircles) {
 	// Find the corners
 	//FindCorners();
 	vector<Vec3f> circles;
-	//initialized once. Keeps track of number of circles to average
-	static int circleCount = 0;
+
 	/// Apply the Hough Transform to find the circles
 	HoughCircles(this->HSV, circles, CV_HOUGH_GRADIENT, 2, this->HSV.rows / 3,
 	TMAX, 40 + this->lowThreshold, 40, 150);
@@ -206,52 +326,49 @@ void OpenCVOfficialTest::InitCircle(int & nCircles) {
 		nCircles++;
 
 		// circle center
-		circle(this->frame, center, 3, Scalar(0, 255, 0), -1, 8, 0);
+		//circle(this->frame, center, 3, Scalar(0, 255, 0), -1, 8, 0);
 		// circle outline
-		circle(this->frame, center, radius, Scalar(0, 0, 255), 3, 8, 0);
+		//	circle(this->frame, center, radius, Scalar(0, 0, 255), 3, 8, 0);
 	}
 }
 
 void OpenCVOfficialTest::InitLines(int & nLines) {
 	vector<Vec2f> lines;
 	Canny(this->HSV, this->HSV, 50, 200, 3);
-	HoughLines(this->HSV, lines, 1, .1, 70);
+	HoughLines(this->HSV, lines, 1, .05, 70);
 
 	//find a good line
 	Vec2f goodLine = getGoodLine(lines, nLines);
 }
 
-
-
-
-
-
-Vec2f OpenCVOfficialTest::getGoodLine(vector<Vec2f> lines, int &nLines)
-{
-	double theta = 0;//CV_PI/2;
-	double thresh = (20.0*CV_PI)/180.0;
+Vec2f OpenCVOfficialTest::getGoodLine(vector<Vec2f> lines, int &nLines) {
+	double theta = 0;	//CV_PI/2;
+	double thresh = (20.0 * CV_PI) / 180.0;
 	Vec2f goodLine;
 
 	//minimizes theta to find a good line
 	for (size_t i = 0; i < lines.size(); i++) {
 
 		//if theta is within the threshold, then return the line
-		if(abs(lines[i][1] - theta) < thresh)
-		{
-		goodLine = lines[i];
-		//add line to list
-		lineList[nLines] = goodLine;
-		nLines++;
+		if (abs(lines[i][1] - theta) < thresh) {
+			goodLine = lines[i];
+			//add line to list
+			lineList[nLines] = goodLine;
+			nLines++;
 
-		Vec4i linePts = this->convertToCartesian(goodLine[0], goodLine[1], 400);
-		//draw line to frame
-		line(this->frame, Point(linePts[0], linePts[1]), Point(linePts[2], linePts[3]), Scalar(0, 0, 255), 10, CV_AA);
-		break;
+			Vec4i linePts = this->convertToCartesian(goodLine[0], goodLine[1],
+					400);
+			//draw line to frame
+			//line(this->frame, Point(linePts[0], linePts[1]), Point(linePts[2], linePts[3]), Scalar(0, 0, 255), 10, CV_AA);
+			break;
 		}
 	}
 	return goodLine;
 }
 
+void OpenCVOfficialTest::InitBall() {
+
+}
 
 #pragma endregion init
 
@@ -260,6 +377,7 @@ void OpenCVOfficialTest::trackDemBlobs() {
 	Mat grayImg, colorImg;
 	int x = 0;
 	int y = 0;
+	static bool isPrinted = false;
 	while (1) {
 		capture >> frame1;
 
@@ -286,6 +404,14 @@ void OpenCVOfficialTest::trackDemBlobs() {
 		if (track) {
 			findColoredObject(grayImg, x, y);
 			drawObject(frame1, x, y);
+			if (!isPrinted) {
+				isPrinted = true;
+				cout << "rmin, gmin, bmin: " << rMin << ", " << gMin << ", "
+						<< bMin << endl;
+				cout << "rmax, gmax, bmax: " << rMax << ", " << gMax << ", "
+						<< bMax << endl;
+			}
+
 		}
 		imshow(windowName, frame1);
 		imshow(windowNameGray, grayImg);
@@ -324,7 +450,7 @@ void OpenCVOfficialTest::drawObject(Mat &frame, int x, int y) {
 		return;
 
 	Point center(x, y);
-	circle(frame, center, 20, Scalar(0, 0, 255), -1, 8);
+	circle(frame, center, 20, Scalar(255, 0, 0), -1, 8);
 }
 
 void OpenCVOfficialTest::BarMovedTest() {
@@ -366,63 +492,56 @@ void OpenCVOfficialTest::createTrackbars() {
 #pragma endregion color tracking
 
 #pragma region
-Vec4i OpenCVOfficialTest::convertToCartesian(double rho, double theta, int length)
-{
-				Point linePt1, linePt2;
-				Vec4i tempVec;
-				double xSc = cos(theta);
-				double ySc = sin(theta);
+Vec4i OpenCVOfficialTest::convertToCartesian(double rho, double theta,
+		int length) {
+	Point linePt1, linePt2;
+	Vec4i tempVec;
+	double xSc = cos(theta);
+	double ySc = sin(theta);
 
-				double x = xSc * rho;
-				double y = ySc * rho;
+	double x = xSc * rho;
+	double y = ySc * rho;
 
-				theta = theta - CV_PI / 2.0;
-				xSc = cos(theta);
-				ySc = sin(theta);
-				tempVec[0] = cvRound(length * xSc + x);
-				tempVec[1]  = cvRound(length * (ySc) + y);
+	theta = theta - CV_PI / 2.0;
+	xSc = cos(theta);
+	ySc = sin(theta);
+	tempVec[0] = cvRound(length * xSc + x);
+	tempVec[1] = cvRound(length * (ySc) + y);
 
-				tempVec[2] = cvRound(-length * xSc + x);
-				tempVec[3]  = cvRound(-length * (ySc) + y);
+	tempVec[2] = cvRound(-length * xSc + x);
+	tempVec[3] = cvRound(-length * (ySc) + y);
 
-				return tempVec;
+	return tempVec;
 }
 
-
-
-	//averages out lines from initLines
-Vec2f AverageOutLines(Vec2f lineList[])
-{
+//averages out lines from initLines
+Vec2f OpenCVOfficialTest::averageOutLines() {
 	float sum0 = 0;
 	float sum1 = 0;
 	Vec2f aveVec;
-	for(int i = 0; i < N_ELEMENTS; i++)
-	{
+	for (int i = 0; i < N_ELEMENTS; i++) {
 		sum0 += lineList[i][0];
 		sum1 += lineList[i][1];
 	}
-	aveVec[0] = sum0/(N_ELEMENTS);
-	aveVec[1] = sum1/(N_ELEMENTS);
+	aveVec[0] = sum0 / (N_ELEMENTS);
+	aveVec[1] = sum1 / (N_ELEMENTS);
 	return aveVec;
 }
 
-
-	//averages out circles from initCircles
-Vec3f AverageOutCircles(Vec3f circleList[])
-{
+//averages out circles from initCircles
+Vec3f OpenCVOfficialTest::averageOutCircles() {
 	float sum0 = 0;
 	float sum1 = 0;
 	float sum2 = 0;
 	Vec3f aveVec;
-	for(int i = 0; i < N_ELEMENTS; i++)
-	{
+	for (int i = 0; i < N_ELEMENTS; i++) {
 		sum0 += circleList[i][0];
 		sum1 += circleList[i][1];
 		sum2 += circleList[i][2];
 	}
-	aveVec[0] = sum0/(N_ELEMENTS);
-	aveVec[1] = sum1/(N_ELEMENTS);
-	aveVec[2] = sum2/(N_ELEMENTS);
+	aveVec[0] = sum0 / (N_ELEMENTS);
+	aveVec[1] = sum1 / (N_ELEMENTS);
+	aveVec[2] = sum2 / (N_ELEMENTS);
 	return aveVec;
 }
 #pragma endregion private helper methods

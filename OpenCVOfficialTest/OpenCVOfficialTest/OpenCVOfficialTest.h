@@ -5,6 +5,9 @@
 
 //#include "stdafx.h"
 // TODO: reference additional headers your program requires here
+/*
+ *
+ */
 #include <sstream>
 #include <string>
 #include <iostream>
@@ -24,7 +27,7 @@
 #define MAX_COUNT 400
 #define CENTER_TO_GOAL 60.0/19.0
 //number of elements to average over during initialization
-#define N_ELEMENTS 10
+#define N_ELEMENTS 30
 
 using namespace cv;
 using namespace std;
@@ -33,6 +36,7 @@ class OpenCVOfficialTest {
 public:
 	OpenCVOfficialTest();
 	void BarMovedTest();
+	void testOpticalFlow();
 	void opticalFlow();
 	void trackDemBlobs();
 	void findColoredObject(Mat &grayImg, int &x, int &y);
@@ -44,6 +48,8 @@ public:
 	void FindCorners();
 	//nLines keeps track of how many lines have been counted
 	void InitLines(int & nLines);
+	//initializes ball based off of color
+	void InitBall();
 	Mat frame, frame1, HSV;
 	int rMin, gMin, bMin;
 	int rMax, gMax, bMax;
@@ -54,10 +60,15 @@ public:
 	string windowNameGray;
 	bool track;
 	int areaToMaximize;
+	Point2f point;
+	bool addRemovePt;
 private:
 	Vec2f getGoodLine(vector<Vec2f> lines, int &nLines);
-	//is false until an average is taken
-	bool circleInit;
+	//average values from circles and lines from initialization
+	Vec3f aveCircle;
+	Vec2f aveLine;
+	//x1, y1, x2, y2
+	Vec4f goaliePos;
 	bool lineInit;
 	//converts a line from polar to cartesian
 	Vec4i convertToCartesian(double rho, double theta, int length);
@@ -66,9 +77,10 @@ private:
 	//list of lines to average during initialization
 	Vec2f lineList[N_ELEMENTS];
 	//averages out lines from initLines
-	Vec2f AverageOutLines(Vec2f lineList[]);
+	Vec2f averageOutLines();
 	//averages out circles from initCircles
-	Vec3f AverageOutCircles(Vec3f circleList[]);
+	Vec3f averageOutCircles();
+	void calcGoalPosition(Vec2f line, Vec3f circle);
 };
 
 #endif
