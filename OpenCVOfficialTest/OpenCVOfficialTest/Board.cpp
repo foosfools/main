@@ -1,5 +1,5 @@
 #include "Board.h"
-
+#include "math.h"
 
 Board::Board(int currentX, int currentY)
 {
@@ -27,3 +27,30 @@ Board::Board()
 	prevY = currY;
 }
 
+
+
+Vec2f Board::updateBallVelocity(int newX, int newY)
+{
+	int deltaY = newY - currY;
+	int deltaX = newX - currX;
+	//vector magnitude of velocity
+	lastBallVelocity = sqrt((deltaX)*(deltaX) + (deltaY)*(deltaY));
+	//components of velocity
+	if(lastBallVelocity != 0)
+	{
+	lastXComp = deltaX/lastBallVelocity;
+	lastYComp = deltaY/lastBallVelocity;
+	}
+	else
+	{
+		lastXComp = 0.0;
+		lastYComp = 0.0;
+	}
+	//update components
+	prevY = currY;
+	prevX = currX;
+	currX = newX;
+	currY = newY;
+
+	return Vec2f(lastXComp, lastYComp);
+}
