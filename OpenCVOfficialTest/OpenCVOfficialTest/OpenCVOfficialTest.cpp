@@ -12,13 +12,14 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/video/tracking.hpp>
 
+
 #define TMAX 100
 #define FRAME_WIDTH 1280
 #define FRAME_HEIGHT 960
 #define MAX_COUNT 400
 
-#include"OpenCVOfficialTest.h"
-
+#include "OpenCVOfficialTest.h"
+#include "Board.h"
 using namespace cv;
 using namespace std;
 
@@ -37,12 +38,14 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	capture.set(CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
 	// cout << capture.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
 	// cout << capture.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
-	rMax = 93;
-	gMax = 120;
-	bMax = 246;
-	rMin = 66;
-	gMin = 59;
-	bMin = 165;
+	int minArr[3] = {19, 49, 135};
+	int maxArr[3] = {93, 120, 246};
+	rMax = maxArr[0];
+	gMax = maxArr[1];
+	bMax = maxArr[2];
+	rMin = minArr[0];
+	gMin = minArr[1];
+	bMin = minArr[2];
 	track = false;
 	areaToMaximize = 0;
 	//////////LOW LIGHT 920 ///////////////
@@ -246,8 +249,9 @@ void OpenCVOfficialTest::Init() {
 	//keeps count of how many lines and circles have been found
 	int nLines = 0;
 	int nCircles = 0;
+	int nBalls = 0;
 	//loop until both lines and circles are ready
-	while (nLines < N_ELEMENTS || nCircles < N_ELEMENTS) {
+	while (nLines < N_ELEMENTS || nCircles < N_ELEMENTS || nBalls < N_ELEMENTS) {
 		capture >> frame;
 
 		if (frame.empty())
@@ -262,6 +266,8 @@ void OpenCVOfficialTest::Init() {
 		if (nLines < N_ELEMENTS)
 			InitLines(nLines);
 
+		if (nBalls < N_ELEMENTS)
+			InitBall(nBalls);
 		//display image
 		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
 		imshow(this->windowName, this->frame);
@@ -269,6 +275,7 @@ void OpenCVOfficialTest::Init() {
 		waitKey(10);
 	}
 	//get average circle and ine dimensions
+	aveBall = averageOutBalls();
 	aveCircle = averageOutCircles();
 	aveLine = averageOutLines();
 	cout << "theta " << aveLine[1] << endl;
@@ -280,6 +287,7 @@ void OpenCVOfficialTest::Init() {
 				Point(tempLine[2], tempLine[3]), Scalar(0, 0, 255), 10, CV_AA);
 		circle(this->frame, Point(cvRound(aveCircle[0]), cvRound(aveCircle[1])),
 				cvRound(aveCircle[2]), Scalar(0, 0, 255), 3, 8, 0);
+		drawObject(frame, aveBall.x, aveBall.y);
 		//display image
 		calcGoalPosition(aveLine, aveCircle);
 		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
@@ -366,8 +374,29 @@ Vec2f OpenCVOfficialTest::getGoodLine(vector<Vec2f> lines, int &nLines) {
 	return goodLine;
 }
 
-void OpenCVOfficialTest::InitBall() {
+void OpenCVOfficialTest::InitBall(int &nBalls) {
+	Mat grayImg, colorImg;
+	int x = 0;
+	int y = 0;
 
+	frame.copyTo(frame1);
+
+	inRange(frame1, Scalar(rMin, gMin, bMin), Scalar(rMax, gMax, bMax),
+			grayImg);
+
+	// Pattern to erode with
+	Mat element = getStructuringElement(MORPH_ELLIPSE,
+			Size(2 * MORPH_ELLIPSE + 1, 2 * MORPH_ELLIPSE + 1),
+			Point(1, 1));
+
+	erode(grayImg, grayImg, element);
+	findColoredObject(grayImg, x, y);
+	if(x != 0 || y != 0)
+	{
+		ballList[nBalls] = Point(x,y);
+		nBalls++;
+	}
+	//drawObject(frame, x, y);
 }
 
 #pragma endregion init
@@ -543,5 +572,22 @@ Vec3f OpenCVOfficialTest::averageOutCircles() {
 	aveVec[1] = sum1 / (N_ELEMENTS);
 	aveVec[2] = sum2 / (N_ELEMENTS);
 	return aveVec;
+}
+
+
+Point OpenCVOfficialTest::averageOutBalls()
+{
+	int sumx = 0;
+	int sumy = 0;
+	Point avePoint;
+
+	for (int i = 0; i < N_ELEMENTS; i++)
+	{
+		sumx += ballList[i].x;
+		sumy += ballList[i].y;
+	}
+	avePoint.x = cvRound((float)sumx/(float)(N_ELEMENTS));
+	avePoint.y = cvRound((float)sumy/(float)(N_ELEMENTS));
+	return avePoint;
 }
 #pragma endregion private helper methods

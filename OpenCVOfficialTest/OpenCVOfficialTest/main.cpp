@@ -12,11 +12,10 @@ int main(int argc, char* argv[])
 {
 	OpenCVOfficialTest cvtest;
 	//cvtest.opticalFlow();
-	cvtest.createTrackbars();
+	//cvtest.createTrackbars();
 	//cvtest.trackDemBlobs();
-	//cvtest.Init();
+	cvtest.Init();
 
-	cvtest.trackDemBlobs();//awww yeeea
 	//cvtest.testOpticalFlow();
 	return 0;
 }

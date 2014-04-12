@@ -5,7 +5,8 @@
 
 //#include "stdafx.h"
 // TODO: reference additional headers your program requires here
-/*
+/*rmin, gmin, bmin: 19, 49, 135
+rmax, gmax, bmax: 93, 120, 246
  *
  */
 #include <sstream>
@@ -18,6 +19,7 @@
 #include<opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/video/tracking.hpp>
+#include "Board.h"
 
 #define TMAX 100
 
@@ -42,14 +44,17 @@ public:
 	void findColoredObject(Mat &grayImg, int &x, int &y);
 	void drawObject(Mat &frame, int x, int y);
 	void createTrackbars();
+	//initializes board and ball
 	void Init();
+	//tracks ball
+	void TrackBall();
 	//nCircles keeps track of how many circles have been counted
 	void InitCircle(int & nCircles);
 	void FindCorners();
 	//nLines keeps track of how many lines have been counted
 	void InitLines(int & nLines);
 	//initializes ball based off of color
-	void InitBall();
+	void InitBall(int & nBalls);
 	Mat frame, frame1, HSV;
 	int rMin, gMin, bMin;
 	int rMax, gMax, bMax;
@@ -62,11 +67,13 @@ public:
 	int areaToMaximize;
 	Point2f point;
 	bool addRemovePt;
+	Board board;
 private:
 	Vec2f getGoodLine(vector<Vec2f> lines, int &nLines);
 	//average values from circles and lines from initialization
 	Vec3f aveCircle;
 	Vec2f aveLine;
+	Point aveBall;
 	//x1, y1, x2, y2
 	Vec4f goaliePos;
 	bool lineInit;
@@ -76,10 +83,14 @@ private:
 	Vec3f circleList[N_ELEMENTS];
 	//list of lines to average during initialization
 	Vec2f lineList[N_ELEMENTS];
+	//list of balls to average
+	Point ballList[N_ELEMENTS];
 	//averages out lines from initLines
 	Vec2f averageOutLines();
 	//averages out circles from initCircles
 	Vec3f averageOutCircles();
+	//verages out ball coords from initBalls
+	Point averageOutBalls();
 	void calcGoalPosition(Vec2f line, Vec3f circle);
 };
 
