@@ -29,7 +29,7 @@ rmax, gmax, bmax: 93, 120, 246
 #define MAX_COUNT 400
 #define CENTER_TO_GOAL 60.0/19.0
 //number of elements to average over during initialization
-#define N_ELEMENTS 30
+#define N_ELEMENTS 100
 
 using namespace cv;
 using namespace std;
@@ -42,10 +42,11 @@ public:
 	void opticalFlow();
 	void trackDemBlobs();
 	void findColoredObject(Mat &grayImg, int &x, int &y);
-	void drawObject(Mat &frame, int x, int y);
+	void drawObject(Mat &frame, int x, int y, double blue, double green, double red);
 	void createTrackbars();
 	//initializes board and ball
 	void Init();
+	void InitWithOutBall();
 	//tracks ball
 	void TrackBall();
 	//nCircles keeps track of how many circles have been counted
@@ -70,6 +71,8 @@ public:
 	Board board;
 private:
 	Vec2f getGoodLine(vector<Vec2f> lines, int &nLines);
+	void calculateGoalieBarPosition(int x, int y);
+	void calculatePlayerPosition();
 	//average values from circles and lines from initialization
 	Vec3f aveCircle;
 	Vec2f aveLine;
