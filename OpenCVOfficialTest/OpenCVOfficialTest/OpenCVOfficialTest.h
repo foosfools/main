@@ -49,6 +49,8 @@ public:
 	void InitWithOutBall();
 	//tracks ball
 	void TrackBall();
+	//performs color tracking
+	Point IdentifyBall();
 	//nCircles keeps track of how many circles have been counted
 	void InitCircle(int & nCircles);
 	void FindCorners();
@@ -68,6 +70,7 @@ public:
 	int areaToMaximize;
 	Point2f point;
 	bool addRemovePt;
+	//game board
 	Board board;
 private:
 	Vec2f getGoodLine(vector<Vec2f> lines, int &nLines);

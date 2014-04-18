@@ -282,9 +282,13 @@ void OpenCVOfficialTest::Init() {
 	aveBall = averageOutBalls();
 	aveCircle = averageOutCircles();
 	aveLine = averageOutLines();
+	//set board parameters
+	board.currX = aveBall.x;
+	board.currY = aveBall.y;
+
 	cout << "theta " << aveLine[1] << endl;
 
-	while (1) {
+	//while (1) {
 
 		Vec4i tempLine = convertToCartesian(200.0, aveLine[1], 200);
 		line(this->frame, Point(tempLine[0], tempLine[1]),
@@ -297,7 +301,7 @@ void OpenCVOfficialTest::Init() {
 		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
 		imshow(this->windowName, this->frame);
 		waitKey(10);
-	}
+	//}
 }
 
 void OpenCVOfficialTest::InitWithOutBall() {
@@ -494,6 +498,28 @@ void OpenCVOfficialTest::InitBall(int &nBalls) {
 #pragma endregion init
 
 #pragma region
+
+
+//performs color tracking
+Point OpenCVOfficialTest::IdentifyBall()
+{
+	Mat grayImg;
+	int x = 0;
+	int y = 0;
+	inRange(frame, Scalar(rMin, gMin, bMin), Scalar(rMax, gMax, bMax),
+			grayImg);
+	// Pattern to erode with
+	Mat element = getStructuringElement(MORPH_ELLIPSE,
+			Size(2 * MORPH_ELLIPSE + 1, 2 * MORPH_ELLIPSE + 1),
+			Point(1, 1));
+
+	erode(grayImg, grayImg, element);
+	findColoredObject(grayImg, x, y);
+	return Point(x, y);
+}
+
+
+
 void OpenCVOfficialTest::trackDemBlobs() {
 	Mat grayImg, colorImg;
 	int x = 0;
@@ -680,4 +706,29 @@ Point OpenCVOfficialTest::averageOutBalls() {
 	avePoint.y = cvRound((float) sumy / (float) (N_ELEMENTS));
 	return avePoint;
 }
+
+
+void OpenCVOfficialTest::TrackBall(){
+	while(1)
+	{
+		capture >> frame;
+
+		if (frame.empty())
+			continue;
+
+		Point ballPoint = IdentifyBall();
+		board.updateBallVelocity(ballPoint.x, ballPoint.y);
+		//oid line(Mat& img, Point pt1, Point pt2, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
+		Point point2 = Point(ballPoint.x + board.lastXComp*board.lastBallVelocity*50, ballPoint.y + board.lastYComp*board.lastBallVelocity*50);
+		cout << board.lastXComp<< " "<< board.lastYComp<< endl;
+		line(frame, ballPoint, point2,Scalar(0,255,0), 3);
+		drawObject(frame, ballPoint.x, ballPoint.y, 0, 0, 255);
+		imshow(windowName, frame);
+
+		waitKey(10);
+	}
+
+
+}
+
 #pragma endregion private helper methods
