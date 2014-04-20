@@ -31,8 +31,8 @@ rmax, gmax, bmax: 93, 120, 246
 //number of elements to average over during initialization
 #define N_ELEMENTS 30
 
-#define GREEN_MIN_BULLSHIT 94, 207, 134
-#define GREEN_MAX_BULLSHIT 154, 255, 196
+#define GREEN_MIN_BULLSHIT 85, 197, 45
+#define GREEN_MAX_BULLSHIT 152, 255, 173
 using namespace cv;
 using namespace std;
 
@@ -46,13 +46,14 @@ public:
 	void findColoredObject(Mat &grayImg, int &x, int &y);
 	void drawObject(Mat &frame, int x, int y, double blue, double green, double red);
 	void createTrackbars();
+	void getLines(int x, int y, int rowStart, int rowEnd, int colStart, int colEnd);
 	//initializes board and ball
 	void Init();
 	void InitWithOutBall();
 	//tracks ball
 	void TrackBall();
 	//performs color tracking
-	Point IdentifyBall();
+	void IdentifyBall();
 	//nCircles keeps track of how many circles have been counted
 	void InitCircle(int & nCircles);
 	void FindCorners();

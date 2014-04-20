@@ -14,9 +14,10 @@ int main(int argc, char* argv[])
 	//cvtest.opticalFlow();
 	//cvtest.createTrackbars();
 	//cvtest.trackDemBlobs();
-	//cvtest.Init();
-	cvtest.InitWithOutBall();
-	//cvtest.TrackBall();
+	cvtest.Init();
+	cout << "Initialized" << endl;
+	//cvtest.InitWithOutBall();
+	cvtest.TrackBall();
 
 	//cvtest.testOpticalFlow();
 	return 0;

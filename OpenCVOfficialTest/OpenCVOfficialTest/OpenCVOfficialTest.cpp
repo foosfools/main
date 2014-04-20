@@ -11,11 +11,11 @@
 #include<opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/video/tracking.hpp>
+#include <ctime>
 
 #define TMAX 100
-#define FRAME_WIDTH 1280
-#define FRAME_HEIGHT 960
 #define MAX_COUNT 400
+#define DISPLAY_WINDOWS false
 
 #include "OpenCVOfficialTest.h"
 #include "Board.h"
@@ -38,11 +38,9 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	capture.set(CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
 	// cout << capture.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
 	// cout << capture.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
-	int minArr[3] = { 0, 0, 0 };
-	int maxArr[3] = { 255, 255, 255};
 
-	//int minArrGreenBuffer[3] = { 94, 207, 134};
-	//int maxArrGreenBuffer[3] = { 154, 255, 196};
+	int minArr[3] = { 0, 48, 175 };
+	int maxArr[3] = { 255, 87, 255 };
 
 	rMax = maxArr[0];
 	gMax = maxArr[1];
@@ -167,8 +165,9 @@ void OpenCVOfficialTest::testOpticalFlow() {
 		}
 
 		needToInit = false;
+		if(DISPLAY_WINDOWS){
 		imshow("LK Demo", image);
-
+		}
 		char c = (char) waitKey(10);
 		if (c == 27)
 			break;
@@ -220,8 +219,9 @@ void OpenCVOfficialTest::opticalFlow() {
 				winSize, 3, termcrit, 0);
 
 		circle(frame, points[1][0], 20, Scalar(0, 0, 255), -1, 8);
+		if(DISPLAY_WINDOWS){
 		imshow(windowName, frame);
-
+		}
 		swap(points[1], points[0]);
 		swap(prev, curr);
 		waitKey(10);
@@ -260,6 +260,9 @@ void OpenCVOfficialTest::Init() {
 	int nLines = 0;
 	int nCircles = 0;
 	int nBalls = 0;
+	bool circlesInit = false;
+	bool linesInit = false;
+	bool ballInit = false;
 	//loop until both lines and circles are ready
 	while (nLines < N_ELEMENTS || nCircles < N_ELEMENTS || nBalls < N_ELEMENTS) {
 		capture >> frame;
@@ -272,15 +275,30 @@ void OpenCVOfficialTest::Init() {
 
 		if (nCircles < N_ELEMENTS)
 			InitCircle(nCircles);
-
+		else{
+			if(!circlesInit)
+			cout << "Circles initialized" << endl;
+			circlesInit = true;
+		}
 		if (nLines < N_ELEMENTS)
 			InitLines(nLines);
-
+		else{
+			if(!linesInit)
+			cout << "Lines initialized" << endl;
+			linesInit = true;
+		}
 		if (nBalls < N_ELEMENTS)
 			InitBall(nBalls);
-		//display image
-		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
-		imshow(this->windowName, this->frame);
+		else{
+			if(!ballInit)
+			cout << "Ball initialized" << endl;
+			ballInit = true;
+		}
+		if (DISPLAY_WINDOWS) {
+			//display image
+			namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+			imshow(this->windowName, this->frame);
+		}
 
 		waitKey(10);
 	}
@@ -292,21 +310,23 @@ void OpenCVOfficialTest::Init() {
 	board.currX = aveBall.x;
 	board.currY = aveBall.y;
 
-	cout << "theta " << aveLine[1] << endl;
+	// << "theta " << aveLine[1] << endl;
 
 	//while (1) {
 
-		Vec4i tempLine = convertToCartesian(200.0, aveLine[1], 200);
-		line(this->frame, Point(tempLine[0], tempLine[1]),
-				Point(tempLine[2], tempLine[3]), Scalar(0, 0, 255), 10, CV_AA);
-		circle(this->frame, Point(cvRound(aveCircle[0]), cvRound(aveCircle[1])),
-				cvRound(aveCircle[2]), Scalar(0, 0, 255), 3, 8, 0);
-		drawObject(frame, aveBall.x, aveBall.y, 255, 0, 0);
-		//display image
-		//calcGoalPosition(aveLine, aveCircle);
+	Vec4i tempLine = convertToCartesian(200.0, aveLine[1], 200);
+	line(this->frame, Point(tempLine[0], tempLine[1]),
+			Point(tempLine[2], tempLine[3]), Scalar(0, 0, 255), 10, CV_AA);
+	circle(this->frame, Point(cvRound(aveCircle[0]), cvRound(aveCircle[1])),
+			cvRound(aveCircle[2]), Scalar(0, 0, 255), 3, 8, 0);
+	drawObject(frame, aveBall.x, aveBall.y, 255, 0, 0);
+	//display image
+	//calcGoalPosition(aveLine, aveCircle);
+	if (DISPLAY_WINDOWS) {
 		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
 		imshow(this->windowName, this->frame);
-		waitKey(10);
+	}
+	waitKey(10);
 	//}
 }
 
@@ -331,16 +351,17 @@ void OpenCVOfficialTest::InitWithOutBall() {
 		if (nLines < N_ELEMENTS)
 			InitLines(nLines);
 
-		//display image
-		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
-		imshow(this->windowName, this->frame);
-
+		if (DISPLAY_WINDOWS) {
+			//display image
+			namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+			imshow(this->windowName, this->frame);
+		}
 		waitKey(10);
 	}
 	//get average circle and ine dimensions
 	aveCircle = averageOutCircles();
 	aveLine = averageOutLines();
-	cout << "theta " << aveLine[1] << endl;
+	//cout << "theta " << aveLine[1] << endl;
 
 	while (1) {
 
@@ -349,10 +370,14 @@ void OpenCVOfficialTest::InitWithOutBall() {
 				Point(tempLine[2], tempLine[3]), Scalar(0, 0, 255), 10, CV_AA);
 		circle(this->frame, Point(cvRound(aveCircle[0]), cvRound(aveCircle[1])),
 				cvRound(aveCircle[2]), Scalar(0, 0, 255), 3, 8, 0);
-		//display image
+
 		calcGoalPosition(aveLine, aveCircle);
-		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
-		imshow(this->windowName, this->frame);
+
+		if (DISPLAY_WINDOWS) {
+			//display image
+			namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+			imshow(this->windowName, this->frame);
+		}
 		waitKey(10);
 	}
 }
@@ -375,91 +400,70 @@ void OpenCVOfficialTest::calcGoalPosition(Vec2f myLine, Vec3f circle) {
 
 }
 
-void OpenCVOfficialTest::updateGoalieBarPosition(int x, int y){
-		Mat tempHSV, tempFrame, grayImg;
+void OpenCVOfficialTest::updateGoalieBarPosition(int x, int y) {
+	Mat tempHSV, tempFrame, grayImg;
 
-		tempFrame = frame(Range::all(), Range(x - 50, frame.cols));
+	tempFrame = frame(Range::all(), Range(x - 50, frame.cols));
 
-		tempHSV = HSV(Range::all(), Range(x - 50, HSV.cols));
+	tempHSV = HSV(Range::all(), Range(x - 50, HSV.cols));
 
-		vector<Vec4i> lines;
+	vector<Vec4i> lines;
 
-		//Canny(tempHSV, tempHSV, 50, 200, 3);
-		HoughLinesP(tempHSV, lines, 1, CV_PI / 180, 50, FRAME_HEIGHT/2, 500);
+	//Canny(tempHSV, tempHSV, 50, 200, 3);
+	HoughLinesP(tempHSV, lines, 1, CV_PI / 180, 50, FRAME_HEIGHT / 2, 500);
 
-		//for (size_t i = 0; i < lines.size(); i++) {
-			Vec4i l = lines[0];
-		//	line(tempFrame, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0, 0, 255), 3,CV_AA);
-		//}
+	//for (size_t i = 0; i < lines.size(); i++) {
+	Vec4i l = lines[0];
+	//	line(tempFrame, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0, 0, 255), 3,CV_AA);
+	//}
 
+	inRange(tempFrame, Scalar(GREEN_MIN_BULLSHIT), Scalar(GREEN_MAX_BULLSHIT),
+			grayImg);
 
-		inRange(tempFrame, Scalar(GREEN_MIN_BULLSHIT), Scalar(GREEN_MAX_BULLSHIT),
-					grayImg);
-
-
-		int x1,y1, x2, y2;
-		x1 = 0;
-		y1 = 0;
-		x2 = 0;
-		y2 = 0;
-		while((x1 == 0 && y1 == 0) || (x2 == 0 && y2 == 0))
-		{
-			findColoredObjectsBitch(grayImg, x1, y1, x2, y2);
-		}
-		board.lastGoaliePos[0] = (x1 + x2)/2;
-		board.lastGoaliePos[1] = (y1 + y2)/2;
-		board.lastGoaliePos[0] += x - 50;
+	int x1, y1, x2, y2;
+	x1 = 0;
+	y1 = 0;
+	x2 = 0;
+	y2 = 0;
+	while ((x1 == 0 && y1 == 0) || (x2 == 0 && y2 == 0)) {
+		findColoredObjectsBitch(grayImg, x1, y1, x2, y2);
+	}
+	board.lastGoaliePos[0] = (x1 + x2) / 2;
+	board.lastGoaliePos[1] = (y1 + y2) / 2;
+	board.lastGoaliePos[0] += x - 50;
 	//	drawObject (frame, board.lastGoaliePos[0], board.lastGoaliePos[1], 0,255, 0);
 
 	//	drawObject (frame, x2 + x - 50, y2, 0, 255, 0);
 
-
-		//createTrackbars();
-		//trackDemBlobs();
+	//createTrackbars();
+	//trackDemBlobs();
 
 }
 
-void OpenCVOfficialTest::getLines(int x, int y){
-		Mat tempHSV, tempFrame, grayImg;
+void OpenCVOfficialTest::getLines(int x, int y, int rowStart, int rowEnd,
+		int colStart, int colEnd) {
+	Mat tempHSV, tempFrame, grayImg;
 
-		tempFrame = frame(Range::all(), Range(x - 50, frame.cols));
+	tempFrame = frame(Range::all(), Range(x - 50, frame.cols));
 
-		tempHSV = HSV(Range::all(), Range(x - 50, HSV.cols));
+	tempHSV = HSV(Range::all(), Range(x - 50, HSV.cols));
 
-		vector<Vec4i> lines;
+	vector<Vec4i> lines;
 
-		//Canny(tempHSV, tempHSV, 50, 200, 3);
-		HoughLinesP(tempHSV, lines, 1, CV_PI / 180, 50, FRAME_HEIGHT/2, 500);
+	//Canny(tempHSV, tempHSV, 50, 200, 3);
+	HoughLinesP(tempHSV, lines, 1, CV_PI / 180, 50, FRAME_HEIGHT / 2, 500);
 
-		//for (size_t i = 0; i < lines.size(); i++) {
-			Vec4i l = lines[0];
-		//	line(tempFrame, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0, 0, 255), 3,CV_AA);
-		//}
+	//for (size_t i = 0; i < lines.size(); i++) {
+	Vec4i l = lines[0];
+	//	line(tempFrame, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0, 0, 255), 3,CV_AA);
+	//}
 
-
-		inRange(tempFrame, Scalar(GREEN_MIN_BULLSHIT), Scalar(GREEN_MAX_BULLSHIT),
-					grayImg);
-
-
-		int x1,y1, x2, y2;
-		x1 = 0;
-		y1 = 0;
-		x2 = 0;
-		y2 = 0;
-		while((x1 == 0 && y1 == 0) || (x2 == 0 && y2 == 0))
-		{
-			findColoredObjectsBitch(grayImg, x1, y1, x2, y2);
-		}
-		board.lastGoaliePos[0] = (x1 + x2)/2;
-		board.lastGoaliePos[1] = (y1 + y2)/2;
-		board.lastGoaliePos[0] += x - 50;
 	//	drawObject (frame, board.lastGoaliePos[0], board.lastGoaliePos[1], 0,255, 0);
 
 	//	drawObject (frame, x2 + x - 50, y2, 0, 255, 0);
 
-
-		//createTrackbars();
-		//trackDemBlobs();
+	//createTrackbars();
+	//trackDemBlobs();
 
 }
 
@@ -500,9 +504,10 @@ void OpenCVOfficialTest::InitCircle(int & nCircles) {
 		//add to list of circles
 		circleList[nCircles] = circles[minCircle];
 		nCircles++;
-		cout << "c:" << nCircles << endl;
+		//cout << "c:" << nCircles << endl;
 		// circle center
-		circle(this->frame, center, radius - nCircles, Scalar(0, 255 - nCircles*10, 0), -1, 8, 0);
+		circle(this->frame, center, radius - nCircles,
+				Scalar(0, 255 - nCircles * 10, 0), -1, 8, 0);
 		// circle outline
 		//	circle(this->frame, center, radius, Scalar(0, 0, 255), 3, 8, 0);
 	}
@@ -569,26 +574,17 @@ void OpenCVOfficialTest::InitBall(int &nBalls) {
 
 #pragma region
 
-
 //performs color tracking
-Point OpenCVOfficialTest::IdentifyBall()
-{
+void OpenCVOfficialTest::IdentifyBall() {
 	Mat grayImg;
-	int x = 0;
-	int y = 0;
-	inRange(frame, Scalar(rMin, gMin, bMin), Scalar(rMax, gMax, bMax),
-			grayImg);
+	inRange(frame, Scalar(rMin, gMin, bMin), Scalar(rMax, gMax, bMax), grayImg);
 	// Pattern to erode with
 	Mat element = getStructuringElement(MORPH_ELLIPSE,
-			Size(2 * MORPH_ELLIPSE + 1, 2 * MORPH_ELLIPSE + 1),
-			Point(1, 1));
+			Size(2 * MORPH_ELLIPSE + 1, 2 * MORPH_ELLIPSE + 1), Point(1, 1));
 
 	erode(grayImg, grayImg, element);
-	findColoredObject(grayImg, x, y);
-	return Point(x, y);
+	findColoredObject(grayImg, board.currX, board.currY);
 }
-
-
 
 void OpenCVOfficialTest::trackDemBlobs() {
 	Mat grayImg, colorImg;
@@ -611,10 +607,6 @@ void OpenCVOfficialTest::trackDemBlobs() {
 				Size(2 * MORPH_ELLIPSE + 1, 2 * MORPH_ELLIPSE + 1),
 				Point(1, 1));
 
-		//erode(grayImg, grayImg, element);
-		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
-		namedWindow(windowNameGray, CV_WINDOW_AUTOSIZE);
-
 		// Starts tracking on click
 		setMouseCallback(windowName, ClickedCallBack, this);
 
@@ -630,8 +622,14 @@ void OpenCVOfficialTest::trackDemBlobs() {
 			}
 
 		}
-		imshow(windowName, frame1);
-		imshow(windowNameGray, grayImg);
+
+		if (DISPLAY_WINDOWS) {
+			//erode(grayImg, grayImg, element);
+			namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+			namedWindow(windowNameGray, CV_WINDOW_AUTOSIZE);
+			imshow(windowName, frame1);
+			imshow(windowNameGray, grayImg);
+		}
 		waitKey(10);
 	}
 }
@@ -662,12 +660,8 @@ void OpenCVOfficialTest::findColoredObject(Mat &grayImg, int &x, int &y) {
 	}
 }
 
-
-
-
-
-
-void OpenCVOfficialTest::findColoredObjectsBitch(Mat &grayImg, int &x1, int &y1, int &x2, int &y2) {
+void OpenCVOfficialTest::findColoredObjectsBitch(Mat &grayImg, int &x1, int &y1,
+		int &x2, int &y2) {
 	vector<vector<Point> > contours;
 	vector<Vec4i> hierarchy;
 	Mat temp;
@@ -694,12 +688,6 @@ void OpenCVOfficialTest::findColoredObjectsBitch(Mat &grayImg, int &x1, int &y1,
 		}
 	}
 }
-
-
-
-
-
-
 
 void OpenCVOfficialTest::drawObject(Mat &frame, int x, int y, double blue,
 		double green, double red) {
@@ -795,7 +783,7 @@ Vec3f OpenCVOfficialTest::averageOutCircles() {
 		sum0 += circleList[i][0];
 		sum1 += circleList[i][1];
 		sum2 += circleList[i][2];
-		cout << "vec:" << sum0 << "  " << sum1 << endl;
+		//cout << "vec:" << sum0 << "  " << sum1 << endl;
 	}
 	aveVec[0] = sum0 / (N_ELEMENTS);
 	aveVec[1] = sum1 / (N_ELEMENTS);
@@ -817,28 +805,35 @@ Point OpenCVOfficialTest::averageOutBalls() {
 	return avePoint;
 }
 
-
-void OpenCVOfficialTest::TrackBall(){
-	while(1)
-	{
+void OpenCVOfficialTest::TrackBall() {
+	while (1) {
+		clock_t startTime = clock();
 		capture >> frame;
 
 		if (frame.empty())
 			continue;
+		//sets globals for ball
+		IdentifyBall();
 
-		Point ballPoint = IdentifyBall();
-		board.updateBallVelocity(ballPoint.x, ballPoint.y);
-		//oid line(Mat& img, Point pt1, Point pt2, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
-		Point point2 = Point(ballPoint.x + board.lastXComp*board.lastBallVelocity*50, ballPoint.y + board.lastYComp*board.lastBallVelocity*50);
-		cout << board.lastXComp<< " "<< board.lastYComp<< endl;
-		line(frame, ballPoint, point2,Scalar(0,255,0), 3);
-		drawObject(frame, ballPoint.x, ballPoint.y, 0, 0, 255);
-		imshow(windowName, frame);
+		//update ball params if the ball is identified
+		board.updateBallVelocity();
+		Point point2 = Point(
+				board.currX + board.lastXComp * board.lastBallVelocity * 50,
+				board.currY + board.lastYComp * board.lastBallVelocity * 50);
+		line(frame, Point(board.currX, board.currY), point2, Scalar(0, 255, 0),
+				3);
+		drawObject(frame, board.currX, board.currY, 0, 0, 255);
+
+		if (DISPLAY_WINDOWS) {
+			imshow(windowName, frame);
+		}
+		clock_t endTime = clock();
+		clock_t clockTicksTaken = endTime - startTime;
+		double fps = (double) (CLOCKS_PER_SEC / clockTicksTaken);
+		cout << "fps: " << fps << endl;
 
 		waitKey(10);
 	}
-
-
 }
 
 #pragma endregion private helper methods

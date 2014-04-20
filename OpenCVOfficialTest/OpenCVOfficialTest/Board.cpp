@@ -33,10 +33,10 @@ Board::Board()
 
 
 
-Vec2f Board::updateBallVelocity(int newX, int newY)
+Vec2f Board::updateBallVelocity()
 {
-	int deltaY = newY - currY;
-	int deltaX = newX - currX;
+	int deltaY = currY - prevY;
+	int deltaX = currX - prevX;
 	//vector magnitude of velocity
 	lastBallVelocity = sqrt((deltaX)*(deltaX) + (deltaY)*(deltaY));
 	//components of velocity
@@ -53,8 +53,5 @@ Vec2f Board::updateBallVelocity(int newX, int newY)
 	//update components
 	prevY = currY;
 	prevX = currX;
-	currX = newX;
-	currY = newY;
-
 	return Vec2f(lastXComp, lastYComp);
 }
