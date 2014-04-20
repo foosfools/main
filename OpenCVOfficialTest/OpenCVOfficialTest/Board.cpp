@@ -12,6 +12,8 @@ Board::Board(int currentX, int currentY)
 	//coordinates from previous frame of ball
 	prevX = currX;
 	prevY = currY;
+	lastGoaliePos[0] = 0;
+	lastGoaliePos[1] = 0;
 }
 
 Board::Board()
@@ -25,6 +27,8 @@ Board::Board()
 	//coordinates from previous frame of ball
 	prevX = currX;
 	prevY = currY;
+	lastGoaliePos[0] = 0;
+	lastGoaliePos[1] = 0;
 }
 
 

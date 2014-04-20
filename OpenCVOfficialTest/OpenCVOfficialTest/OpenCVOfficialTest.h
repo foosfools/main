@@ -29,8 +29,10 @@ rmax, gmax, bmax: 93, 120, 246
 #define MAX_COUNT 400
 #define CENTER_TO_GOAL 60.0/19.0
 //number of elements to average over during initialization
-#define N_ELEMENTS 100
+#define N_ELEMENTS 30
 
+#define GREEN_MIN_BULLSHIT 94, 207, 134
+#define GREEN_MAX_BULLSHIT 154, 255, 196
 using namespace cv;
 using namespace std;
 
@@ -67,14 +69,15 @@ public:
 	string windowName;
 	string windowNameGray;
 	bool track;
-	int areaToMaximize;
+	int areaToMaximize1;
 	Point2f point;
 	bool addRemovePt;
 	//game board
 	Board board;
+	void getLines(int x, int y);
 private:
 	Vec2f getGoodLine(vector<Vec2f> lines, int &nLines);
-	void calculateGoalieBarPosition(int x, int y);
+	void updateGoalieBarPosition(int x, int y);
 	void calculatePlayerPosition();
 	//average values from circles and lines from initialization
 	Vec3f aveCircle;
@@ -98,7 +101,9 @@ private:
 	//verages out ball coords from initBalls
 	Point averageOutBalls();
 	void calcGoalPosition(Vec2f line, Vec3f circle);
-};
+	void findColoredObjectsBitch(Mat &grayImg, int &x1, int &y1, int &x2, int &y2);
 
+};
 #endif
+
 

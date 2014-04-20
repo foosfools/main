@@ -39,7 +39,11 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	// cout << capture.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
 	// cout << capture.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
 	int minArr[3] = { 0, 0, 0 };
-	int maxArr[3] = { 255, 255, 255 };
+	int maxArr[3] = { 255, 255, 255};
+
+	//int minArrGreenBuffer[3] = { 94, 207, 134};
+	//int maxArrGreenBuffer[3] = { 154, 255, 196};
+
 	rMax = maxArr[0];
 	gMax = maxArr[1];
 	bMax = maxArr[2];
@@ -47,17 +51,19 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	gMin = minArr[1];
 	bMin = minArr[2];
 	track = false;
-	areaToMaximize = 0;
+	areaToMaximize1 = 0;
 	//////////LOW LIGHT 920 ///////////////
-	//rmin, gmin, bmin: 15, 52, 100
-	//rmax, gmax, bmax: 46, 120, 246
+	//int minArr[3] = { 39, 46, 136 };
+	//int maxArr[3] = { 77, 104, 255 };
 	//
 	//rmin, gmin, bmin: 66, 59, 165
 	//rmax, gmax, bmax: 93, 120, 246
 	///////////Bar buffers/////////////////
 	//rmin, gmin, bmin: 0, 162, 0
 	//rmax, gmax, bmax: 128, 255, 202
-
+	///////////Green Bar buffers/////////////////
+	//rmin, gmin, bmin: 76, 142, 0
+	//rmax, gmax, bmax: 119, 167, 227
 }
 
 #pragma region
@@ -261,7 +267,7 @@ void OpenCVOfficialTest::Init() {
 		if (frame.empty())
 			continue;
 
-		blur(this->HSV, this->HSV, Size(2, 2));
+		blur(this->frame, this->frame, Size(2, 2));
 		cvtColor(this->frame, this->HSV, CV_BGR2GRAY);
 
 		if (nCircles < N_ELEMENTS)
@@ -297,7 +303,7 @@ void OpenCVOfficialTest::Init() {
 				cvRound(aveCircle[2]), Scalar(0, 0, 255), 3, 8, 0);
 		drawObject(frame, aveBall.x, aveBall.y, 255, 0, 0);
 		//display image
-		calcGoalPosition(aveLine, aveCircle);
+		//calcGoalPosition(aveLine, aveCircle);
 		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
 		imshow(this->windowName, this->frame);
 		waitKey(10);
@@ -316,7 +322,7 @@ void OpenCVOfficialTest::InitWithOutBall() {
 		if (frame.empty())
 			continue;
 
-		blur(this->HSV, this->HSV, Size(2, 2));
+		blur(this->frame, this->frame, Size(2, 2));
 		cvtColor(this->frame, this->HSV, CV_BGR2GRAY);
 
 		if (nCircles < N_ELEMENTS)
@@ -363,34 +369,97 @@ void OpenCVOfficialTest::calcGoalPosition(Vec2f myLine, Vec3f circle) {
 	goaliePos.x = scalingFactor * unitVec[0] + cvRound(circle[0]);
 	goaliePos.y = scalingFactor * unitVec[1] + cvRound(circle[1]);
 
-	calculateGoalieBarPosition(goaliePos.x, goaliePos.y);
+	updateGoalieBarPosition(goaliePos.x, goaliePos.y);
 
 	drawObject(frame, goaliePos.x, goaliePos.y, 255, 0, 0);
 
 }
 
-void OpenCVOfficialTest::calculateGoalieBarPosition(int x, int y){
-	Mat tempFrame = frame.clone();
-		Mat tempHSV;
+void OpenCVOfficialTest::updateGoalieBarPosition(int x, int y){
+		Mat tempHSV, tempFrame, grayImg;
 
-		tempFrame = tempFrame(Range::all(), Range(x - 50, tempFrame.cols));
-		tempHSV = tempFrame.clone();
+		tempFrame = frame(Range::all(), Range(x - 50, frame.cols));
+
+		tempHSV = HSV(Range::all(), Range(x - 50, HSV.cols));
 
 		vector<Vec4i> lines;
 
-		Canny(tempHSV, tempHSV, 50, 200, 3);
-		HoughLinesP(tempHSV, lines, 1, CV_PI / 180, 50, FRAME_HEIGHT/20,20);
+		//Canny(tempHSV, tempHSV, 50, 200, 3);
+		HoughLinesP(tempHSV, lines, 1, CV_PI / 180, 50, FRAME_HEIGHT/2, 500);
 
-		for (size_t i = 0; i < lines.size(); i++) {
-			Vec4i l = lines[i];
-			line(tempFrame, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0, 0, 255), 3,CV_AA);
+		//for (size_t i = 0; i < lines.size(); i++) {
+			Vec4i l = lines[0];
+		//	line(tempFrame, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0, 0, 255), 3,CV_AA);
+		//}
+
+
+		inRange(tempFrame, Scalar(GREEN_MIN_BULLSHIT), Scalar(GREEN_MAX_BULLSHIT),
+					grayImg);
+
+
+		int x1,y1, x2, y2;
+		x1 = 0;
+		y1 = 0;
+		x2 = 0;
+		y2 = 0;
+		while((x1 == 0 && y1 == 0) || (x2 == 0 && y2 == 0))
+		{
+			findColoredObjectsBitch(grayImg, x1, y1, x2, y2);
 		}
+		board.lastGoaliePos[0] = (x1 + x2)/2;
+		board.lastGoaliePos[1] = (y1 + y2)/2;
+		board.lastGoaliePos[0] += x - 50;
+	//	drawObject (frame, board.lastGoaliePos[0], board.lastGoaliePos[1], 0,255, 0);
 
-		namedWindow("goalie bar", CV_WINDOW_AUTOSIZE);
-		imshow("goalie bar", tempFrame);
+	//	drawObject (frame, x2 + x - 50, y2, 0, 255, 0);
 
-		createTrackbars();
-		trackDemBlobs();
+
+		//createTrackbars();
+		//trackDemBlobs();
+
+}
+
+void OpenCVOfficialTest::getLines(int x, int y){
+		Mat tempHSV, tempFrame, grayImg;
+
+		tempFrame = frame(Range::all(), Range(x - 50, frame.cols));
+
+		tempHSV = HSV(Range::all(), Range(x - 50, HSV.cols));
+
+		vector<Vec4i> lines;
+
+		//Canny(tempHSV, tempHSV, 50, 200, 3);
+		HoughLinesP(tempHSV, lines, 1, CV_PI / 180, 50, FRAME_HEIGHT/2, 500);
+
+		//for (size_t i = 0; i < lines.size(); i++) {
+			Vec4i l = lines[0];
+		//	line(tempFrame, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0, 0, 255), 3,CV_AA);
+		//}
+
+
+		inRange(tempFrame, Scalar(GREEN_MIN_BULLSHIT), Scalar(GREEN_MAX_BULLSHIT),
+					grayImg);
+
+
+		int x1,y1, x2, y2;
+		x1 = 0;
+		y1 = 0;
+		x2 = 0;
+		y2 = 0;
+		while((x1 == 0 && y1 == 0) || (x2 == 0 && y2 == 0))
+		{
+			findColoredObjectsBitch(grayImg, x1, y1, x2, y2);
+		}
+		board.lastGoaliePos[0] = (x1 + x2)/2;
+		board.lastGoaliePos[1] = (y1 + y2)/2;
+		board.lastGoaliePos[0] += x - 50;
+	//	drawObject (frame, board.lastGoaliePos[0], board.lastGoaliePos[1], 0,255, 0);
+
+	//	drawObject (frame, x2 + x - 50, y2, 0, 255, 0);
+
+
+		//createTrackbars();
+		//trackDemBlobs();
 
 }
 
@@ -405,7 +474,7 @@ void OpenCVOfficialTest::InitCircle(int & nCircles) {
 			TMAX, 40 + this->lowThreshold, 40, 150);
 
 	int minCircle = 0;
-	double distance = INTER_MAX;
+	double distance = 30;
 	double tempDistance = 0.0;
 
 	for (int i = 0; i < circles.size(); i++) {
@@ -427,12 +496,13 @@ void OpenCVOfficialTest::InitCircle(int & nCircles) {
 		Point center(cvRound(circles[minCircle][0]),
 				cvRound(circles[minCircle][1]));
 		int radius = cvRound(circles[minCircle][2]);
+
 		//add to list of circles
 		circleList[nCircles] = circles[minCircle];
 		nCircles++;
-
+		cout << "c:" << nCircles << endl;
 		// circle center
-		//circle(this->frame, center, 3, Scalar(0, 255, 0), -1, 8, 0);
+		circle(this->frame, center, radius - nCircles, Scalar(0, 255 - nCircles*10, 0), -1, 8, 0);
 		// circle outline
 		//	circle(this->frame, center, radius, Scalar(0, 0, 255), 3, 8, 0);
 	}
@@ -571,7 +641,7 @@ void OpenCVOfficialTest::findColoredObject(Mat &grayImg, int &x, int &y) {
 	vector<Vec4i> hierarchy;
 	Mat temp;
 	grayImg.copyTo(temp);
-	areaToMaximize = 0;
+	areaToMaximize1 = 0;
 
 	findContours(temp, contours, hierarchy, CV_RETR_CCOMP,
 			CV_CHAIN_APPROX_SIMPLE);
@@ -584,13 +654,52 @@ void OpenCVOfficialTest::findColoredObject(Mat &grayImg, int &x, int &y) {
 		Moments moment = moments((cv::Mat) contours[i]);
 		double area = moment.m00;
 		//maximization loop
-		if (area > areaToMaximize) {
-			areaToMaximize = area;
+		if (area > areaToMaximize1) {
+			areaToMaximize1 = area;
 			x = moment.m10 / area;
 			y = moment.m01 / area;
 		}
 	}
 }
+
+
+
+
+
+
+void OpenCVOfficialTest::findColoredObjectsBitch(Mat &grayImg, int &x1, int &y1, int &x2, int &y2) {
+	vector<vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+	Mat temp;
+	grayImg.copyTo(temp);
+	areaToMaximize1 = 0;
+
+	findContours(temp, contours, hierarchy, CV_RETR_CCOMP,
+			CV_CHAIN_APPROX_SIMPLE);
+//need this to prevent crash
+	if (!hierarchy.size())
+		return;
+
+	for (int i = 0; i >= 0; i = hierarchy[i][0]) {
+
+		Moments moment = moments((cv::Mat) contours[i]);
+		double area = moment.m00;
+		//maximization loop
+		if (area > areaToMaximize1) {
+			x2 = x1;
+			y2 = y1;
+			areaToMaximize1 = area;
+			x1 = moment.m10 / area;
+			y1 = moment.m01 / area;
+		}
+	}
+}
+
+
+
+
+
+
 
 void OpenCVOfficialTest::drawObject(Mat &frame, int x, int y, double blue,
 		double green, double red) {
@@ -686,6 +795,7 @@ Vec3f OpenCVOfficialTest::averageOutCircles() {
 		sum0 += circleList[i][0];
 		sum1 += circleList[i][1];
 		sum2 += circleList[i][2];
+		cout << "vec:" << sum0 << "  " << sum1 << endl;
 	}
 	aveVec[0] = sum0 / (N_ELEMENTS);
 	aveVec[1] = sum1 / (N_ELEMENTS);

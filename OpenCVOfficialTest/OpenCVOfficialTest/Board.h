@@ -35,6 +35,8 @@ public:
 	//coordinates from current frame of ball
 	int currX;
 	int currY;
+
+	Vec2i lastGoaliePos;
 };
 
 

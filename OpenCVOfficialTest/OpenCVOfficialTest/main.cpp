@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
 	//cvtest.trackDemBlobs();
 	//cvtest.Init();
 	cvtest.InitWithOutBall();
-	cvtest.TrackBall();
+	//cvtest.TrackBall();
 
 	//cvtest.testOpticalFlow();
 	return 0;
