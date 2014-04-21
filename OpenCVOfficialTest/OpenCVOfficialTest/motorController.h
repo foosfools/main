@@ -47,7 +47,7 @@ public:
 	/**
 	 *
 	 */
-	void moveGoalie(unsigned int steps);
+	void moveGoalie(int steps);
 
 	/**
 	 *
