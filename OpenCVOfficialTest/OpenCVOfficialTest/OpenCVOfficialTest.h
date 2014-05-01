@@ -31,8 +31,8 @@ rmax, gmax, bmax: 93, 120, 246
 //number of elements to average over during initialization
 #define N_ELEMENTS 10
 
-#define GREEN_MIN_BULLSHIT 85, 197, 45
-#define GREEN_MAX_BULLSHIT 152, 255, 173
+#define GREEN_MIN 85, 197, 45
+#define GREEN_MAX 152, 255, 173
 using namespace cv;
 using namespace std;
 
@@ -103,7 +103,7 @@ private:
 	//verages out ball coords from initBalls
 	Point averageOutBalls();
 	void calcGoalPosition(Vec2f line, Vec3f circle);
-	void findColoredObjectsBitch(Mat &grayImg, int &x1, int &y1, int &x2, int &y2);
+	void findColoredObjects2(Mat &grayImg, int &x1, int &y1, int &x2, int &y2);
 
 };
 #endif
