@@ -620,4 +620,3 @@ negative_images/negImg618.jpg
 negative_images/negImg619.jpg
 negative_images/negImg620.jpg
 negative_images/negImg621.jpg
-negative_images/negImg622.jpg

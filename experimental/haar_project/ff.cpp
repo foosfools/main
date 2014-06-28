@@ -49,7 +49,10 @@ void processPositives()
 	cout << fileName << endl;
 	imwrite(fileName, frame);
 
-	fileStream << fileName;
+	strcat(stupidBuf, " 1");
+
+	string textLine = (string)stupidBuf;
+	fileStream << textLine;
 	fileStream << "\n";
 	
 	count++;
