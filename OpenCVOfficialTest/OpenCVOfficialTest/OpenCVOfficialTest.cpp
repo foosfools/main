@@ -67,7 +67,7 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 
 #pragma region
 void on_trackbar(int, void*) {	//This function gets called whenever a
-								// trackbar position is changed
+	// trackbar position is changed
 
 }
 
@@ -82,14 +82,14 @@ void ClickedCallBack(int event, int x, int y, int flags, void* userdata) {
 
 	if (event == EVENT_LBUTTONDOWN) {
 		cout << "Left button of the mouse is clicked - position (" << x << ", "
-				<< y << ")" << endl;
+			<< y << ")" << endl;
 		temp->track = true;
 	} else if (event == EVENT_RBUTTONDOWN) {
 		cout << "Right button of the mouse is clicked - position (" << x << ", "
-				<< y << ")" << endl;
+			<< y << ")" << endl;
 	} else if (event == EVENT_MBUTTONDOWN) {
 		cout << "Middle button of the mouse is clicked - position (" << x
-				<< ", " << y << ")" << endl;
+			<< ", " << y << ")" << endl;
 	}
 }
 
@@ -167,19 +167,19 @@ void OpenCVOfficialTest::testOpticalFlow() {
 
 		needToInit = false;
 		if(DISPLAY_WINDOWS){
-		imshow("LK Demo", image);
+			imshow("LK Demo", image);
 		}
 		char c = (char) waitKey(10);
 		if (c == 27)
 			break;
 		switch (c) {
-		case 'r':
-			needToInit = true;
-			break;
-		case 'c':
-			points[0].clear();
-			points[1].clear();
-			break;
+			case 'r':
+				needToInit = true;
+				break;
+			case 'c':
+				points[0].clear();
+				points[1].clear();
+				break;
 		}
 
 		std::swap(points[1], points[0]);
@@ -221,7 +221,7 @@ void OpenCVOfficialTest::opticalFlow() {
 
 		circle(frame, points[1][0], 20, Scalar(0, 0, 255), -1, 8);
 		if(DISPLAY_WINDOWS){
-		imshow(windowName, frame);
+			imshow(windowName, frame);
 		}
 		swap(points[1], points[0]);
 		swap(prev, curr);
@@ -278,14 +278,14 @@ void OpenCVOfficialTest::Init() {
 			InitCircle(nCircles);
 		else{
 			if(!circlesInit)
-			cout << "Circles initialized" << endl;
+				cout << "Circles initialized" << endl;
 			circlesInit = true;
 		}
 		if (nLines < N_ELEMENTS)
 			InitLines(nLines);
 		else{
 			if(!linesInit)
-			cout << "Lines initialized" << endl;
+				cout << "Lines initialized" << endl;
 			linesInit = true;
 		}
 		if (nBalls < N_ELEMENTS)
@@ -293,9 +293,9 @@ void OpenCVOfficialTest::Init() {
 			GaussianBlur(frame,frame, Size(5,5),2);
 			InitBall(nBalls);
 		}
-			else{
+		else{
 			if(!ballInit)
-			cout << "Ball initialized" << endl;
+				cout << "Ball initialized" << endl;
 			ballInit = true;
 		}
 		if (DISPLAY_WINDOWS) {
@@ -620,9 +620,9 @@ void OpenCVOfficialTest::trackDemBlobs() {
 			if (!isPrinted) {
 				isPrinted = true;
 				cout << "rmin, gmin, bmin: " << rMin << ", " << gMin << ", "
-						<< bMin << endl;
+					<< bMin << endl;
 				cout << "rmax, gmax, bmax: " << rMax << ", " << gMax << ", "
-						<< bMax << endl;
+					<< bMax << endl;
 			}
 
 		}
@@ -647,7 +647,7 @@ void OpenCVOfficialTest::findColoredObject(Mat &grayImg, int &x, int &y) {
 
 	findContours(temp, contours, hierarchy, CV_RETR_CCOMP,
 			CV_CHAIN_APPROX_SIMPLE);
-//need this to prevent crash
+	//need this to prevent crash
 	if (!hierarchy.size())
 		return;
 
@@ -674,7 +674,7 @@ void OpenCVOfficialTest::findColoredObjects2(Mat &grayImg, int &x1, int &y1,
 
 	findContours(temp, contours, hierarchy, CV_RETR_CCOMP,
 			CV_CHAIN_APPROX_SIMPLE);
-//need this to prevent crash
+	//need this to prevent crash
 	if (!hierarchy.size())
 		return;
 
@@ -718,11 +718,11 @@ void OpenCVOfficialTest::BarMovedTest() {
 }
 
 void OpenCVOfficialTest::createTrackbars() {
-//create window for trackbars
+	//create window for trackbars
 	string trackbarWindowName = "Track Bars";
-//createButton("Track",TrackCallBack, this, CV_PUSH_BUTTON, 0);
+	//createButton("Track",TrackCallBack, this, CV_PUSH_BUTTON, 0);
 	namedWindow(trackbarWindowName, 0);
-//create memory to store trackbar name on window
+	//create memory to store trackbar name on window
 	char TrackbarName[50];
 	sprintf(TrackbarName, "bMin", bMin);
 	sprintf(TrackbarName, "bMax", bMax);
@@ -816,9 +816,9 @@ void OpenCVOfficialTest::TrackBall() {
 
 		if (frame.empty())
 			continue;
-		
+
 		GaussianBlur(frame, frame, Size(5,5),2);
-		
+
 
 		//sets globals for ball
 		IdentifyBall();
