@@ -22,7 +22,7 @@ cleanPos:
 	rm -f info.dat positive_images/*.jpg
 
 createSamples:
-	opencv_createsamples -vec positiveSamples.vec -info info.dat -bg bg.txt -num 37 -bgcolor 0 -bgthresh 0 -maxxangle 0.71 -maxyangle 0.71 -maxidev 40 -w 30 -h 120	-show
+	opencv_createsamples -vec positiveSamples.vec -info info.dat -bg bg.txt -num 37 -bgcolor 0 -bgthresh 0 -maxxangle 0.71 -maxyangle 0.71 -maxidev 40 -w 30 -h 30	-show
 
 cleanStages:
 	rm -f data/*.xml
