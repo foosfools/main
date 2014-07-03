@@ -2,7 +2,7 @@ LIBS= -lopencv_calib3d -lopencv_contrib -lopencv_core -lopencv_features2d -lopen
 
 
 tracking:
-	g++ ourDetect.cpp -O3 -I/usr/include/opencv $(LIBS) -o ourDetect
+	g++ daDetect.cpp -O3 -I/usr/include/opencv $(LIBS) -o ourDetect
 
 getPics: ff.cpp
 	g++ ff.cpp -O3 -I/usr/include/opencv $(LIBS) -o getPics
