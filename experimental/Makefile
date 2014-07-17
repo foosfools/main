@@ -7,3 +7,7 @@ all:
 clean:
 	rm -rf *.o *~ $(EXECUTABLE) getPics foosfools
 
+calibrate:
+	g++ calibrate.cpp -O3 -I/usr/include/opencv $(LIBS) -o calibrate
+
+
