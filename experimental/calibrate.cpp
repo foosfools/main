@@ -13,14 +13,19 @@
 using namespace std;
 using namespace cv;
 
-static const string windowName     = "Calibrate Window Bitch!!!";
-static const string windowNameGray = "Output BITCH!!!";
+static const string windowName          = "Calibrate Window Bitch!!!";
+static const string lightWindowNameGray = "Light window BITCH!!!";
+static const string darkWindowNameGray  = "Dark window BITCH!!!";
+static const string ORedWindowNameGray  = "ORed window BITCH!!!";
 
-static int minArr[3] = {12, 0, 117};
-static int maxArr[3] = {48, 255, 255};
- 
-//static int minArr[3] = { 0, 0, 0};
-//static int maxArr[3] = { UINT8_MAX, UINT8_MAX, UINT8_MAX };
+//static int minArr1[3] = {0, 91, 185};
+//static int maxArr1[3] = {73, 137, 255};
+//hight light
+static int minArr1[3] = { 0, 0, 0 };
+static int maxArr1[3] = { UINT8_MAX, UINT8_MAX, UINT8_MAX };
+//low light
+static int minArr2[3] = { 0, 0, 0 };
+static int maxArr2[3] = { UINT8_MAX, UINT8_MAX, UINT8_MAX };
 
 static VideoCapture capture;
 
@@ -32,9 +37,7 @@ void on_trackbar(int, void*) {
 
 
 
-static void createTrackbars() {
-	//create window for trackbars
-	string trackbarWindowName = "Track Bars";
+static void createTrackbars(string trackbarWindowName, int* minArr, int* maxArr) {
 	//createButton("Track",TrackCallBack, this, CV_PUSH_BUTTON, 0);
 	namedWindow(trackbarWindowName, 0);
 	//create memory to store trackbar name on window
@@ -54,46 +57,62 @@ static void createTrackbars() {
 }
 
 
-
-static void calibrate(void)
+//outputs gray image
+static Mat calibrate(Mat frame1, int * minArr, int * maxArr)
 {
-	Mat grayImg, frame1;
-	int x = 0;
-	int y = 0;
+	Mat grayImg;
 	static bool isPrinted = false;
-	while (1) {
-		capture >> frame1;
 
-		if (frame1.empty())
-			continue;
-
-		blur(frame1, frame1, Size(2, 2));
-
-		inRange(frame1, Scalar(minArr[0], minArr[1], minArr[2]), Scalar(maxArr[0], maxArr[1], maxArr[2]),
-				grayImg);
-				
-		cout << "static const int minArr[3] = {" << minArr[0] << ", " << minArr[1] << ", " << minArr[2] << "};" <<endl;
-		cout << "static const int maxArr[3] = {" << maxArr[0] << ", " << maxArr[1] << ", " << maxArr[2] << "};" <<endl;
-		//erode(grayImg, grayImg, element);
-		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
-		namedWindow(windowNameGray, CV_WINDOW_AUTOSIZE);
-		imshow(windowName, frame1);
-		imshow(windowNameGray, grayImg);
-
-		waitKey(10);
-	}
+	blur(frame1, frame1, Size(2, 2));
+	inRange(frame1, Scalar(minArr[0], minArr[1], minArr[2]), Scalar(maxArr[0], maxArr[1], maxArr[2]),
+			grayImg);
+			
+	cout << "static const int minArr[3] = {" << minArr[0] << ", " << minArr[1] << ", " << minArr[2] << "};" <<endl;
+	cout << "static const int maxArr[3] = {" << maxArr[0] << ", " << maxArr[1] << ", " << maxArr[2] << "};" <<endl;
+		
+	return grayImg;
 }
 
 
 
 int main(void)
 {
+	Mat frame1;
+	Mat lightOutput;
+	Mat darkOutput;
+	Mat ORedOutput;
 	capture.open(0);
 	capture.set(CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
 	capture.set(CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
 	
-	createTrackbars();
-	calibrate();
+	createTrackbars("High light mayne!!!", minArr1, maxArr1);
+	createTrackbars("Low light mayne!!!", minArr2, maxArr2);
+	
+	while (1) 
+	{
+		capture >> frame1;
+
+		if (frame1.empty())
+			continue;
+			
+		lightOutput = calibrate(frame1, minArr1, maxArr1);
+		darkOutput  = calibrate(frame1, minArr2, maxArr2);
+		ORedOutput  = lightOutput | darkOutput;
+		
+		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+		namedWindow(lightWindowNameGray, CV_WINDOW_AUTOSIZE);
+		namedWindow(darkWindowNameGray, CV_WINDOW_AUTOSIZE);
+		namedWindow(ORedWindowNameGray, CV_WINDOW_AUTOSIZE);
+		namedWindow("So many windows!", CV_WINDOW_AUTOSIZE);
+		
+		imshow(windowName, frame1);
+		imshow(lightWindowNameGray, lightOutput);
+		imshow(darkWindowNameGray,  darkOutput);
+		imshow(ORedWindowNameGray,  ORedOutput);
+		
+		waitKey(10);
+	}
+
 	
 	return 0;
 }

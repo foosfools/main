@@ -740,6 +740,61 @@ void OpenCVOfficialTest::createTrackbars() {
 }
 #pragma endregion color tracking
 
+
+
+
+
+#pragma region
+
+void OpenCVOfficialTest::kalmanFilterInit()
+{
+	KF = KalmanFilter(4,2,0);
+
+	
+	KF.transitionMatrix = *(Mat_<float>(6, 6) << 1,0,1,0,0.5,0, 0,1,0,1,0,0.5, 0,0,1,0,1,0, 0,0,0,1,0,1, 0,0,0,0,1,0, 0,0,0,0,0,1);
+	KF.measurementMatrix = *(Mat_<float>(2, 6) << 1,0,1,0,0.5,0, 0,1,0,1,0,0.5);
+	//Mat_<float> measurement(2,1); measurement.setTo(Scalar(0));
+ 
+	// init...
+	KF.statePre.at<float>(0) = 0;//mouse_info.x;
+	KF.statePre.at<float>(1) = 0;//mouse_info.y;
+	KF.statePre.at<float>(2) = 0;
+	KF.statePre.at<float>(3) = 0;
+	KF.statePre.at<float>(4) = 0;
+	KF.statePre.at<float>(5) = 0;
+	//setIdentity(KF.measurementMatrix);
+	setIdentity(KF.processNoiseCov, Scalar::all(1e-4));
+	setIdentity(KF.measurementNoiseCov, Scalar::all(1e-1));
+	setIdentity(KF.errorCovPost, Scalar::all(.1));
+}
+
+
+
+Point OpenCVOfficialTest::getKalmanPoint(Point measuredPoint)
+{
+	Mat_<float> measurement(2,1); measurement.setTo(Scalar(0));
+	// First predict, to update the internal statePre variable
+	Mat prediction = KF.predict();
+	Point predictPt(prediction.at<float>(0), prediction.at<float>(1));
+			 
+	// Get mouse point
+	measurement(0) = measuredPoint.x;
+	measurement(1) = measuredPoint.y;
+			 
+	Point measPt(measurement(0),measurement(1));
+ 
+	// The "correct" phase that is going to use the predicted value and our measurement
+	Mat estimated = KF.correct(measurement);
+	Point statePt(estimated.at<float>(0),estimated.at<float>(1));
+	
+	return statePt;
+}
+
+#pragma endregion filtering
+
+
+
+
 #pragma region
 Vec4i OpenCVOfficialTest::convertToCartesian(double rho, double theta,
 		int length) {
@@ -832,8 +887,8 @@ void OpenCVOfficialTest::TrackBall() {
 				3);
 		drawObject(frame, board.currX, board.currY, 0, 0, 255);
 
-		controller.moveGoalie(board.currY);
-		controller.rotateGoalie(board.currX);
+		//controller.moveGoalie(board.currY);
+	//	controller.rotateGoalie(board.currX);
 		//controller.moveGoalie(board.currY - 120);
 
 		if (DISPLAY_WINDOWS) {

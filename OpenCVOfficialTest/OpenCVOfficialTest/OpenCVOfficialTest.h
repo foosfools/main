@@ -20,7 +20,7 @@ rmax, gmax, bmax: 93, 120, 246
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/video/tracking.hpp>
 #include "Board.h"
-#include "motorController.h"
+//#include "motorController.h"
 #define TMAX 100
 
 #define FRAME_WIDTH 320
@@ -75,8 +75,14 @@ public:
 	bool addRemovePt;
 	//game board
 	Board board;
-	motorController controller;
+	//motorController controller;
 	void getLines(int x, int y);
+	
+	//Kalman stuff
+	KalmanFilter KF;
+	void kalmanFilterInit();
+	Point getKalmanPoint(Point measuredPoint);
+
 private:
 	Vec2f getGoodLine(vector<Vec2f> lines, int &nLines);
 	void updateGoalieBarPosition(int x, int y);
