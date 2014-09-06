@@ -2,6 +2,10 @@
 *.slo
 *.lo
 *.o
+*.d
+*.bin
+*.hex
+*.out
 *.obj
 
 # Compiled Dynamic libraries
