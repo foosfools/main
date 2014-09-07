@@ -59,8 +59,8 @@ TIMER0A_Handler(void)
 				if(motor_info[i].remainTime_ms == 0)
 				{
 					motor_info[i].pwm_en = false; 
-					motor_info[i].remainTime_ms = 3000;
-					PWMOutputState(PWM0_BASE, PWM_OUT_0_BIT, stateVar);
+					//motor_info[i].remainTime_ms = 3000;
+					PWMOutputState(PWM0_BASE, PWM_OUT_0_BIT, false);
 					stateVar = !stateVar;
 				}
 			}
@@ -75,11 +75,14 @@ int main(void)
 {
     volatile uint32_t ui32Loop;
 	systemInit();
+	PWMOutputState(PWM0_BASE, PWM_OUT_0_BIT, false);
+	stepSizeSet(quarter);
 	SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOF;
     ui32Loop = SYSCTL_RCGC2_R;
     GPIO_PORTF_DIR_R = 0x08;
     GPIO_PORTF_DEN_R = 0x08;
-	
+    int i; 
+		
 	for(;;)
 	{
 		if(writeToScreen)
@@ -88,8 +91,22 @@ int main(void)
 			
 			_write(0, buf, bufIndex + 1);	
 			_write(0, &c, 1);
+		//	if(1)
+			if(strcmp("forward\r", buf) == 0)
+			{
+			  GPIO_PORTF_DATA_R = 0X08;   
+			  motor_info[0].pwm_en = true; 
+			  motor_info[0].remainTime_ms = 1000;
+ 			  PWMOutputState(PWM0_BASE, PWM_OUT_0_BIT, true);
+	
+			}
 			bufIndex = 0;
 			writeToScreen = false;
+
+			for(i = 0; i< BUF_COUNT; i++)
+			{
+			   buf[i] = '\0'; 
+			}	
 		}
 	}
 	return 0;

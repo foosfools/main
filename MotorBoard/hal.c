@@ -2,7 +2,10 @@
 * hal.c
 */
 #include "hal.h"
-
+int strcmp(const char *a,const char *b){
+  if (! (*a | *b)) return 0;
+  return (*a!=*b) ? *a-*b : strcmp(++a,++b);
+}
 
 
 void TimerInit()
@@ -44,9 +47,8 @@ void systemInit(void)
 	SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
 					 SYSCTL_XTAL_16MHZ);
 	UARTInit();
-	//stepSizePinsInit();
-	//stepSizeSet(half);
-	//PWMInit();
+	stepSizePinsInit();
+	PWMInit();
 	TimerInit();
 }
 
@@ -54,7 +56,7 @@ void systemInit(void)
 
 void PWMInit(void)
 {
-		uint32_t prescale = 1;
+		uint32_t prescale = 8;
 		SysCtlPWMClockSet(SYSCTL_PWMDIV_1);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
 
