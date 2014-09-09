@@ -1,6 +1,10 @@
 LIB_PATH=..
 LIBC_A=~/Desktop/gcc-arm-none-eabi-4_8-2014q2/arm-none-eabi/lib/libc.a
+<<<<<<< HEAD
 LIBGCC_A=/Users/niteout/Desktop/lm4f/lib/gcc/arm-none-eabi/4.7.3/libgcc.a
+=======
+LIBGCC_A=~/Desktop/lm4f/lib/gcc/arm-none-eabi/4.7.3/libgcc.a
+>>>>>>> 72e0fe0762a2446fa5d0f2ea55bf127d9a036e15
 PREFIX=~/Desktop/gcc-arm-none-eabi-4_8-2014q2/bin/arm-none-eabi
 
 CPU=-mcpu=cortex-m4
@@ -59,7 +63,11 @@ echo-lib:
 
 build:
 	${CC} ${CFLAGS} ${C_SOURCE_FILES}
+<<<<<<< HEAD
 	${LD}  ${OBJECT_FILES} ${LIBC_A} ${TIVA_LIB_DIR}/libdriver.a -T ${LINKER_FILE} ${LD_FLAGS} -o ${PROGRAM_NAME}.o
+=======
+	${LD}  ${OBJECT_FILES} ${TIVA_LIB_DIR}/libdriver.a -T ${LINKER_FILE} ${LD_FLAGS} -o ${PROGRAM_NAME}.o
+>>>>>>> 72e0fe0762a2446fa5d0f2ea55bf127d9a036e15
 	${PREFIX}-objcopy -O binary ${PROGRAM_NAME}.o ${PROGRAM_NAME}.bin
 	${PREFIX}-size ${PROGRAM_NAME}.o
 	

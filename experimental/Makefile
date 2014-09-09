@@ -12,6 +12,9 @@ kalman:
 calibrate: calibrate.cpp
 	g++ calibrate.cpp -O3 -I/usr/include/opencv $(LIBS) -o calibrate
 
+virtualPortTest:
+	g++ virtualPort.cpp virtualPortTest.cpp -O3 -o virtual.o 
+
 all: opticalFlowDect calibrate
 
 
