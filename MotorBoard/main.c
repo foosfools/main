@@ -59,13 +59,10 @@ TIMER0A_Handler(void)
 				if(motor_info[i].remainTime_ms == 0)
 				{
 					motor_info[i].pwm_en = false; 
-<<<<<<< HEAD
-					motor_info[i].remainTime_ms = 3000;
+//					motor_info[i].remainTime_ms = 3000;
 					PWMOutputState(PWM0_BASE, PWM_OUT_0_BIT, stateVar);
-=======
 					//motor_info[i].remainTime_ms = 3000;
 					PWMOutputState(PWM0_BASE, PWM_OUT_0_BIT, false);
->>>>>>> 72e0fe0762a2446fa5d0f2ea55bf127d9a036e15
 					stateVar = !stateVar;
 				}
 			}
@@ -80,21 +77,16 @@ int main(void)
 {
     volatile uint32_t ui32Loop;
 	systemInit();
-<<<<<<< HEAD
-=======
 	PWMOutputState(PWM0_BASE, PWM_OUT_0_BIT, false);
 	stepSizeSet(quarter);
->>>>>>> 72e0fe0762a2446fa5d0f2ea55bf127d9a036e15
 	SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOF;
+	
     ui32Loop = SYSCTL_RCGC2_R;
     GPIO_PORTF_DIR_R = 0x08;
     GPIO_PORTF_DEN_R = 0x08;
-<<<<<<< HEAD
-	
-=======
-    int i; 
 		
->>>>>>> 72e0fe0762a2446fa5d0f2ea55bf127d9a036e15
+	int i; 
+		
 	for(;;)
 	{
 		if(writeToScreen)
@@ -103,11 +95,9 @@ int main(void)
 			
 			_write(0, buf, bufIndex + 1);	
 			_write(0, &c, 1);
-<<<<<<< HEAD
 			bufIndex = 0;
 			writeToScreen = false;
-=======
-		//	if(1)
+			//	if(1)
 			if(strcmp("forward\r", buf) == 0)
 			{
 			  GPIO_PORTF_DATA_R = 0X08;   
@@ -123,7 +113,6 @@ int main(void)
 			{
 			   buf[i] = '\0'; 
 			}	
->>>>>>> 72e0fe0762a2446fa5d0f2ea55bf127d9a036e15
 		}
 	}
 	return 0;
