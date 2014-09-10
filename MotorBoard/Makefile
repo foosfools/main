@@ -76,7 +76,11 @@ debug: build
 all: clean release
 
 gdb-run:
-	${PREFIX}-gdb ${PROGRAM_NAME}.o target remote /dev/tty.usbmodem0E20ACC1
+	${PREFIX}-gdb ${PROGRAM_NAME}.o
+	
+gdb-openocd:
+	openocd -f /usr/local/share/openocd/scripts/board/ek-tm4c123gxl.cfg
 	
 open:
 	screen /dev/tty.usbmodem0E20ACC1 9600
+	
