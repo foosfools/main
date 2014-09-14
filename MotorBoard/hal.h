@@ -27,17 +27,23 @@
 
 static uint32_t criticalRegionCount = 0;
 
-#define CRITICAL_START()  \
-{ 												\
+
+
+#define CRITICAL_START()    \
+{ 							\
 	IntMasterDisable();     \
 	criticalRegionCount++;  \
 }
 
-#define CRITICAL_END()           \
-{											       		 \
-	if(--criticalRegionCount == 0) \
-		IntMasterEnable();				   \
+
+
+#define CRITICAL_END()               \
+{						    		 \
+	if(--criticalRegionCount == 0)   \
+		IntMasterEnable();			 \
 }
+
+
 	
 typedef enum
 {
@@ -49,31 +55,33 @@ typedef enum
 	thirtySecond,
 } stepSize;
 
+
+
 typedef struct
 {
 	uint32_t remainTime_ms; 
 	bool pwm_en; 
 	
+	uint32_t step_pin;
+	uint32_t step_port;
+	
+	uint32_t dir_pin;
+	uint32_t dir_port;
+	
+	uint32_t sleep_pin;
+	uint32_t sleep_port;
+	
+	uint32_t pwm_base;
+	uint32_t pwm_outBit;
 } motor_foop;
 
 
 
-
-typedef enum
-{
-	motor0_pin = GPIO_PIN_6,
-} motor_pin;
-
-typedef enum
-{
-	motor0_port = GPIO_PORTB_BASE,
-} motor_port;
-
 void UARTInit(void);
 
-void systemInit(void);
+void systemInit(motor_foop* motorArray, uint8_t totalMotors);
 
-void PWMInit(void);
+void PWMInit(motor_foop* motorArray, uint32_t totalMotors);
 
 void stepSizePinsInit(void);
 
@@ -81,4 +89,14 @@ void stepSizeSet(stepSize size);
 
 void TimerInit(void);
 
+void motorSleepDirPinsInit(motor_foop* motorArray, uint8_t totalMotors);
+
+void MOTOR_ENABLE(uint32_t num, uint32_t time_ms, motor_foop * motorArray, bool direction);
+
+void MOTOR_DISABLE(uint32_t num, motor_foop * motorArray);
+
+int32_t stringToInt(char* c);
+
+//only input is char*c. the rest are outputs. returns true on success
+bool parsemotorData(char* c, uint8_t* motorNum, bool* direction, uint32_t* time_ms);
 //EOF
