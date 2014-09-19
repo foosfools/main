@@ -12,10 +12,11 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/video/tracking.hpp>
 #include <ctime>
+#include <unistd.h>
 
 #define TMAX 100
 #define MAX_COUNT 400
-#define DISPLAY_WINDOWS false
+#define DISPLAY_WINDOWS true
 
 #include "OpenCVOfficialTest.h"
 #include "Board.h"
@@ -39,9 +40,10 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	// cout << capture.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
 	// cout << capture.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
 
-	int minArr[3] = { 0, 94, 179};
-	int maxArr[3] = { 85, 124, 225};
-
+//	int minArr[3] = { 0, 94, 179};
+//	int maxArr[3] = { 85, 124, 225};
+	int minArr[3] = {0, 70, 199};
+	int maxArr[3] = {38, 223, 255};
 	rMax = maxArr[0];
 	gMax = maxArr[1];
 	bMax = maxArr[2];
@@ -63,6 +65,9 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 	//rmin, gmin, bmin: 76, 142, 0
 	//rmax, gmax, bmax: 119, 167, 227
 	//controller();
+	
+	uart_fd = virtualPort_open(); 
+	configure_port(uart_fd); 
 }
 
 #pragma region
@@ -265,7 +270,7 @@ void OpenCVOfficialTest::Init() {
 	bool linesInit = false;
 	bool ballInit = false;
 	//loop until both lines and circles are ready
-	while (nLines < N_ELEMENTS || nCircles < N_ELEMENTS || nBalls < N_ELEMENTS) {
+	while (nBalls < N_ELEMENTS){//(nLines < N_ELEMENTS || nCircles < N_ELEMENTS || nBalls < N_ELEMENTS) {
 		capture >> frame;
 
 		if (frame.empty())
@@ -273,7 +278,7 @@ void OpenCVOfficialTest::Init() {
 
 		//blur(this->frame, this->frame, Size(2, 2));
 		cvtColor(this->frame, this->HSV, CV_BGR2GRAY);
-
+/*
 		if (nCircles < N_ELEMENTS)
 			InitCircle(nCircles);
 		else{
@@ -287,7 +292,7 @@ void OpenCVOfficialTest::Init() {
 			if(!linesInit)
 				cout << "Lines initialized" << endl;
 			linesInit = true;
-		}
+		}*/
 		if (nBalls < N_ELEMENTS)
 		{
 			GaussianBlur(frame,frame, Size(5,5),2);
@@ -328,6 +333,7 @@ void OpenCVOfficialTest::Init() {
 	//calcGoalPosition(aveLine, aveCircle);
 	if (DISPLAY_WINDOWS) {
 		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+		setMouseCallback(windowName, ClickedCallBack, this);
 		imshow(this->windowName, this->frame);
 	}
 	waitKey(10);
@@ -589,6 +595,8 @@ void OpenCVOfficialTest::IdentifyBall() {
 	//erode(grayImg, grayImg, element);
 	findColoredObject(grayImg, board.currX, board.currY);
 }
+
+
 
 void OpenCVOfficialTest::trackDemBlobs() {
 	Mat grayImg, colorImg;
@@ -880,6 +888,27 @@ void OpenCVOfficialTest::TrackBall() {
 
 		//update ball params if the ball is identified
 		board.updateBallVelocity();
+		Vec2i ballOnRodComp = board.getBallPredictionOnRod(board.rod1);
+		Vec2i avgballOnRodComp = board.avgBallOnRod(ballOnRodComp);
+		
+		//cout << "prediction: " << ballOnRodComp[0] << "  " << ballOnRodComp[1]<< endl;
+		
+		if(avgballOnRodComp[0] != -1)
+		{
+			Vec2i temp;
+			temp[1] = avgballOnRodComp[1] - board.rod1[1][1];
+			int motor_rod = board.convertRodtoMotorPulse(temp);
+			board.rod1[1][1] = avgballOnRodComp[1]; 
+			char outBuf[10];
+			
+			this->createMotorCommand(motor_rod, 1, outBuf);
+			
+		write(uart_fd, outBuf, strlen(outBuf));
+		cout << "motor pulse: " << motor_rod << endl; 
+			cout << "motor rod: " << outBuf << endl; 
+			circle(frame, Point(avgballOnRodComp[0], avgballOnRodComp[1]), 10, Scalar(0, 255, 0), 3, 8, 0);
+		}
+		
 		Point point2 = Point(
 				board.currX + board.lastXComp * board.lastBallVelocity * 50,
 				board.currY + board.lastYComp * board.lastBallVelocity * 50);
@@ -890,17 +919,58 @@ void OpenCVOfficialTest::TrackBall() {
 		//controller.moveGoalie(board.currY);
 	//	controller.rotateGoalie(board.currX);
 		//controller.moveGoalie(board.currY - 120);
-
 		if (DISPLAY_WINDOWS) {
+			line(frame, Point(board.rod1[0][0], board.rod1[0][1]),
+			Point(board.rod1[2][0], board.rod1[2][1]), Scalar(0, 0, 255), 10, CV_AA);
 			imshow(windowName, frame);
 		}
+		//cout << "rod: " << board.rod1[0][0] << endl;
 		clock_t endTime = clock();
 		clock_t clockTicksTaken = endTime - startTime;
 		double fps = (double) (CLOCKS_PER_SEC / clockTicksTaken);
-		cout << "fps: " << fps << ","<< board.currX << "," << board.currY << endl;
+		//cout << "fps: " << fps << ","<< board.currX << "," << board.currY << endl;
 
 		waitKey(10);
 	}
 }
+
+
+//"1:1000"
+void OpenCVOfficialTest::createMotorCommand(int motorPulse, int motorNum, char* outBuf)
+{
+	int motorNum_index = 2;
+	
+	int index = 0;
+	
+	outBuf[index++] = motorNum + '0';
+	outBuf[index++] = ':';
+	
+	if(motorPulse < 0)
+	{
+		outBuf[index++] = '-';
+		motorPulse = -motorPulse;
+		 motorNum_index = 3;
+	}
+	
+	for(int i = motorPulse; i != 0; i /= 10)
+	{
+		outBuf[index++] = (i % 10) + '0';
+	}
+	
+	int swapLen = index - motorNum_index;
+	
+	for(int j = 0; j < swapLen / 2; j++)
+	{
+		int temp = outBuf[motorNum_index + j];
+		outBuf[motorNum_index + j] = outBuf[index - j - 1];
+		outBuf[index - j - 1] = temp;
+	}
+	
+	outBuf[index++] = '\r';
+	outBuf[index++] = '\0';
+	
+}
+
+
 
 #pragma endregion private helper methods

@@ -14,12 +14,14 @@ rmax, gmax, bmax: 93, 120, 246
 #include <iostream>
 #include <ctype.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include<opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/video/tracking.hpp>
 #include "Board.h"
+#include "../../MotorBoard/virtualPort/virtualPort.h"
 //#include "motorController.h"
 #define TMAX 100
 
@@ -77,6 +79,7 @@ public:
 	Board board;
 	//motorController controller;
 	void getLines(int x, int y);
+	int uart_fd;
 	
 	//Kalman stuff
 	KalmanFilter KF;
@@ -110,7 +113,7 @@ private:
 	Point averageOutBalls();
 	void calcGoalPosition(Vec2f line, Vec3f circle);
 	void findColoredObjects2(Mat &grayImg, int &x1, int &y1, int &x2, int &y2);
-
+	void createMotorCommand(int motorPulse, int motorNum, char* outBuf);
 };
 #endif
 

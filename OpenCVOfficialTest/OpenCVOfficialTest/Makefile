@@ -5,6 +5,7 @@ INCLUDES := /usr/include/opencv
 C_SRC_FILES := OpenCVOfficialTest.cpp
 C_SRC_FILES += main.cpp
 C_SRC_FILES += Board.cpp
+C_SRC_FILES += ../../MotorBoard/virtualPort/virtualPort.cpp
 #C_SRC_FILES += motorController.cpp
 
 
