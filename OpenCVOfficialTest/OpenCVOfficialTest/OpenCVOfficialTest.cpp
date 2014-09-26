@@ -42,8 +42,11 @@ OpenCVOfficialTest::OpenCVOfficialTest() {
 
 //	int minArr[3] = { 0, 94, 179};
 //	int maxArr[3] = { 85, 124, 225};
-	int minArr[3] = {0, 70, 199};
-	int maxArr[3] = {38, 223, 255};
+// 	int  minArr[3] = {0, 70, 199};
+// 	int maxArr[3] = {38, 223, 255};
+	int minArr[3] = {0, 85, 141};
+	int maxArr[3] = {81, 160, 255};
+
 	rMax = maxArr[0];
 	gMax = maxArr[1];
 	bMax = maxArr[2];
@@ -880,7 +883,7 @@ void OpenCVOfficialTest::TrackBall() {
 		if (frame.empty())
 			continue;
 
-		GaussianBlur(frame, frame, Size(5,5),2);
+		GaussianBlur(frame, frame, Size(5,5), 2);
 
 
 		//sets globals for ball
@@ -888,24 +891,39 @@ void OpenCVOfficialTest::TrackBall() {
 
 		//update ball params if the ball is identified
 		board.updateBallVelocity();
+		double lastXVel = 0.0;
 		Vec2i ballOnRodComp = board.getBallPredictionOnRod(board.rod1);
-		Vec2i avgballOnRodComp = board.avgBallOnRod(ballOnRodComp);
+		Vec2i avgballOnRodComp = board.avgBallOnRod(ballOnRodComp, &lastXVel);
 		
 		//cout << "prediction: " << ballOnRodComp[0] << "  " << ballOnRodComp[1]<< endl;
 		
 		if(avgballOnRodComp[0] != -1)
 		{
 			Vec2i temp;
+			double goalieBallArrivalTime_s = 0.0;
+			
 			temp[1] = avgballOnRodComp[1] - board.rod1[1][1];
 			int motor_rod = board.convertRodtoMotorPulse(temp);
 			board.rod1[1][1] = avgballOnRodComp[1]; 
-			char outBuf[10];
 			
-			this->createMotorCommand(motor_rod, 1, outBuf);
+			uint8_t bufSize = 10;
+			char outBufA[bufSize];
+			char outBufB[bufSize];
+			this->createMotorCommand(motor_rod, 1, outBufA);
+			write(uart_fd, outBufA, strlen(outBufA));
 			
-		write(uart_fd, outBuf, strlen(outBuf));
-		cout << "motor pulse: " << motor_rod << endl; 
-			cout << "motor rod: " << outBuf << endl; 
+		//	memset(outBufA, '\0', bufSize);
+			
+			goalieBallArrivalTime_s = board.currX / lastXVel;
+			
+			if(goalieBallArrivalTime_s < 0 && goalieBallArrivalTime_s >= -0.1)
+			{
+				this->createMotorCommand(-800, 0, outBufB);
+				write(uart_fd, outBufB, strlen(outBufB));
+			}
+			
+			cout << "motor pulse: " << motor_rod << endl; 
+			cout << "goalieBallArrivalTime_s " << goalieBallArrivalTime_s << endl; 
 			circle(frame, Point(avgballOnRodComp[0], avgballOnRodComp[1]), 10, Scalar(0, 255, 0), 3, 8, 0);
 		}
 		

@@ -228,6 +228,7 @@ bool parsemotorData(char* c, uint8_t* motorNum, bool* direction, uint32_t* time_
 		*direction = false;
 		*time_ms = tempTime_ms;
 	}
+	
 	return true;
 }
 

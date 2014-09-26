@@ -28,6 +28,7 @@ UARTIntHandler(void)
     UARTIntClear(UART0_BASE, ui32Status);
 
 	char c = UARTCharGetNonBlocking(UART0_BASE);
+	
 	if((uint8_t)c != -1)
 	{
 		buf[bufIndex] = c;
@@ -92,6 +93,7 @@ int main(void)
 			
 			if(parsemotorData(buf, &motorNum, &direction, &time_ms))
 			{
+				if(!motor_info[motorNum].pwm_en)
 				MOTOR_ENABLE(motorNum, time_ms, motor_info, direction);
 			}
 			

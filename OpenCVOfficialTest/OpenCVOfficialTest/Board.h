@@ -32,7 +32,7 @@ public:
 	
 	//returns a coordinate for the prediction when it hits the rod, or -1 if the ball is not going to hit within range of the rod
 	Vec2i getBallPredictionOnRod(Vec2i rod[ROD_NUM_ELEMENTS]);
-
+	double lastBallVelocity_pixPerSecX;
 	float lastBallVelocity;
 	//latest components of velocity for ball
 	float lastXComp;
@@ -45,8 +45,8 @@ public:
 	int currY;
 
 	Vec2i lastGoaliePos;
-
-	Vec2i avgBallOnRod(Vec2i prediction); 
+//returns last x pixVel and avg prediction position, lastXPixVel = NaN if not valid
+	Vec2i avgBallOnRod(Vec2i prediction, double* lastXPixVel); 
 	
 	// (x_{0}, y_{0}, x_{1}, y_{1})
 	Vec4i bottomBoard;
