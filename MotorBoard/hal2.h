@@ -1,6 +1,9 @@
 /*
 * hal2.h
 */
+#ifndef HAL_H
+#define HAL_H
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -72,6 +75,9 @@ typedef struct
 	uint32_t sleep_port;
 	
 	uint32_t stepPin_state;
+	
+	uint32_t slaveSel_port;
+	uint32_t slaveSel_pin;
 } motor_foop;
 
 
@@ -99,3 +105,5 @@ int32_t stringToInt(char* c);
 //only input is char*c. the rest are outputs. returns true on success
 bool parsemotorData(char* c, uint8_t* motorNum, bool* direction, uint32_t* time_ms);
 //EOF
+
+#endif
