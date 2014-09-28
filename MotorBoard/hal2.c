@@ -3,6 +3,9 @@
 */
 
 #include "hal2.h"
+#include "AS5048.h"
+#include "foos_spi.h"
+
 int strcmp(const char *a,const char *b){
   if (! (*a | *b)) return 0;
   return (*a!=*b) ? *a-*b : strcmp(++a,++b);
@@ -15,7 +18,7 @@ void TimerInit()
 	SysCtlPeripheralReset(SYSCTL_PERIPH_TIMER0);
 	SysCtlDelay(5);
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC);
-	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 500);
+	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 1);
 	IntMasterEnable();
 	TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	IntEnable(INT_TIMER0A);
@@ -51,6 +54,7 @@ void systemInit(motor_foop* motorArray, uint8_t totalMotors)
 // 	PWMInit(motorArray, totalMotors);
 	TimerInit();
 	motorsPinsInit(motorArray, totalMotors);
+	AS5048_init(motorArray, totalMotors);
 }
 
 /*
@@ -267,5 +271,11 @@ int32_t stringToInt(char* c)
 }
 
 
+inline void endian16_swap(uint16_t* n)
+{
+	uint16_t a = (*n) << 8;
+	*n = (*n) >> 8;
+	*n |= a;
+}
 
 //EOF

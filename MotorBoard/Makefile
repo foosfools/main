@@ -62,7 +62,7 @@ echo-lib:
 
 build:
 	${CC} ${CFLAGS} ${C_SOURCE_FILES}
-	${LD}  ${OBJECT_FILES} ${TIVA_LIB_DIR}/libdriver.a -T ${LINKER_FILE} ${LD_FLAGS} -o ${PROGRAM_NAME}.o
+	${LD} ${OBJECT_FILES} ${TIVA_LIB_DIR}/libdriver.a -T ${LINKER_FILE} ${LD_FLAGS} -o ${PROGRAM_NAME}.o
 	${PREFIX}-objcopy -O binary ${PROGRAM_NAME}.o ${PROGRAM_NAME}.bin
 	${PREFIX}-size ${PROGRAM_NAME}.o
 	

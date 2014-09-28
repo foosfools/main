@@ -106,4 +106,6 @@ int32_t stringToInt(char* c);
 bool parsemotorData(char* c, uint8_t* motorNum, bool* direction, uint32_t* time_ms);
 //EOF
 
+inline void endian16_swap(uint16_t* n);
+
 #endif

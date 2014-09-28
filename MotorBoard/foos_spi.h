@@ -20,7 +20,7 @@ void spi_close(uint32_t port, uint32_t pin);
 
 //buf - the data to be written
 //size- the size in bytes of the data to be written
-void spi_write(uint8_t* buf, size_t size);
+void spi_write16(uint16_t* buf, size_t size);
 
 
 //buf - the buffer where data gets written

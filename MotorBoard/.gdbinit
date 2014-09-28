@@ -3,5 +3,5 @@ mon reset halt
 load
 mon reset init
 break main2.c:main
-break hal2.c:stringToInt
+break main2.c:75
 c

@@ -2,6 +2,7 @@
 #include "AS5048.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define TOTAL_MOTORS 2
 
@@ -49,7 +50,7 @@ TIMER0A_Handler(void)
 {
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	uint32_t i; 
-
+/*
 	for(i = 0; i < TOTAL_MOTORS; i++)
 	{
 		if(motor_info[i].toggleGPIO_en)
@@ -68,7 +69,16 @@ TIMER0A_Handler(void)
 			}
 			CRITICAL_END();
 		}
-	}
+	}*/
+
+	uint16_t buf = AS5048_readMagnitude(motor_info[0].slaveSel_port, motor_info[0].slaveSel_pin);
+	uint8_t modBuf = (((uint8_t*)buf)[0] / 26) + (uint8_t)'0';
+	_write(0, &modBuf, 1);
+	//size- the size in bytes of the data to be written
+	/*spi_open(motor_info[0].slaveSel_port, motor_info[0].slaveSel_pin);
+	spi_write((uint8_t*) c, 4);
+	spi_close(motor_info[0].slaveSel_port, motor_info[0].slaveSel_pin);*/
+	
 }
 
 

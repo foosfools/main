@@ -20,8 +20,8 @@ void spi_init(motor_foop* motorArray, uint32_t totalMotors)
     GPIOPinConfigure(GPIO_PA4_SSI0RX);
     GPIOPinConfigure(GPIO_PA5_SSI0TX);
     
-	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0,
-                       SSI_MODE_MASTER, 1000000, 8);
+	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_1,
+                       SSI_MODE_MASTER, 1000000, 16);
    SSIEnable(SSI0_BASE);
    
   GPIOPinTypeSSI(GPIO_PORTA_BASE,  GPIO_PIN_5 | GPIO_PIN_4 | GPIO_PIN_2);
@@ -29,7 +29,8 @@ void spi_init(motor_foop* motorArray, uint32_t totalMotors)
    //tx, rx, clk
    for(uint32_t i = 0; i < totalMotors; i++)
    {
-	  GPIOPinTypeSSI(motorArray[i].slaveSel_port, motorArray[i].slaveSel_pin);
+	 // GPIOPinTypeSSI(motorArray[i].slaveSel_port, motorArray[i].slaveSel_pin);
+	 GPIOPinTypeGPIOOutput(motorArray[i].slaveSel_port, motorArray[i].slaveSel_pin);
    }
    
 
@@ -57,17 +58,18 @@ void spi_close(uint32_t port, uint32_t pin)
 
 
 //buf - the data to be written
-//size- the size in bytes of the data to be written
+//size- the number of 16 bit values to send
 //assumes spi has been opened
-void spi_write(uint8_t* buf, size_t size)
+void spi_write16(uint16_t* buf, size_t size)
 {
 	uint32_t temp = 0;
 	
 	for(uint32_t i = 0; i < size; i++)
 	{
-		temp = (uint32_t)(buf[i] & 0xFF);
+		temp = (uint32_t)buf[i];
         SSIDataPut(SSI0_BASE, temp);
 	}
+	
 	
 	while(SSIBusy(SSI0_BASE))
 		continue;

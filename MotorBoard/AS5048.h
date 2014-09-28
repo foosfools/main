@@ -9,6 +9,11 @@ typedef enum
 
 typedef enum
 {
+	error_bit = (1 << 14),
+} bitfields;
+
+typedef enum
+{
 	magnitudeReg_address = 0x3FFE,
 	angleReg_address 	= 0x3FFF, 
 } address_t; 
@@ -24,6 +29,7 @@ uint16_t gitParityBit(uint16_t data);
 static uint16_t read_AS5048 (uint32_t port, uint32_t pin, address_t address);
 uint16_t AS5048_readMagnitude(uint32_t port, uint32_t pin);
 uint16_t AS5048_readAngle(uint32_t port, uint32_t pin);
+void errorFlag_clearrr(uint32_t port, uint32_t pin);
 
 #endif
 //EOF
