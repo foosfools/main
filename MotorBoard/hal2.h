@@ -108,4 +108,6 @@ bool parsemotorData(char* c, uint8_t* motorNum, bool* direction, uint32_t* time_
 
 inline void endian16_swap(uint16_t* n);
 
+void printHex16(uint16_t val);
+
 #endif

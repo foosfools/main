@@ -3,6 +3,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
+
+typedef enum
+{
+	spiRX_event,
+	writeToScreen_event,
+	
+	numEvents,
+} events;
+
+static bool eventArr[numEvents];
 
 #define TOTAL_MOTORS 2
 
@@ -13,6 +24,10 @@ static char buf[BUF_COUNT];
 static bool writeToScreen = false;
 
 static uint8_t bufIndex = 0;
+
+
+
+
 
 static motor_foop motor_info[] = 
 {	
@@ -71,30 +86,27 @@ TIMER0A_Handler(void)
 		}
 	}*/
 
-	uint16_t buf = AS5048_readMagnitude(motor_info[0].slaveSel_port, motor_info[0].slaveSel_pin);
-	uint8_t modBuf = (((uint8_t*)buf)[0] / 26) + (uint8_t)'0';
-	_write(0, &modBuf, 1);
 	//size- the size in bytes of the data to be written
 	/*spi_open(motor_info[0].slaveSel_port, motor_info[0].slaveSel_pin);
 	spi_write((uint8_t*) c, 4);
 	spi_close(motor_info[0].slaveSel_port, motor_info[0].slaveSel_pin);*/
-	
+	//eventArr[spiRX_event] = true;
+		uint16_t buf = AS5048_readMagnitude(motor_info[0].slaveSel_port, motor_info[0].slaveSel_pin);
+	printHex16(buf);
 }
 
 
 
-int main(void)
-{
-    volatile uint32_t ui32Loop;
-	systemInit(motor_info, TOTAL_MOTORS);
 
-	int i; 
-		
-	for(;;)
-	{
-		if(writeToScreen)
-		{
-			char c = '\n';
+
+static void handleSpiRXEvent()
+{
+}
+
+
+static void handleWriteToScreenEvent()
+{
+		char c = '\n';
 			_write(0, buf, bufIndex + 1);
 			_write(0, &c, 1);
 			
@@ -113,11 +125,43 @@ int main(void)
 			bufIndex = 0;
 			writeToScreen = false;
 
-			for(i = 0; i < BUF_COUNT; i++)
+			for(uint32_t i = 0; i < BUF_COUNT; i++)
 			{
 			   buf[i] = '\0'; 
 			}	
+}
+
+int main(void)
+{
+    volatile uint32_t ui32Loop;
+	systemInit(motor_info, TOTAL_MOTORS);
+
+	int i; 
+		
+	for(;;)
+	{
+		for(uint32_t event = 0; event < numEvents; event++)
+		{
+			if(eventArr[event])
+			{
+				eventArr[event] = false;
+				
+				switch(event)
+				{
+					case spiRX_event:
+						handleSpiRXEvent();
+						break;
+						
+					case writeToScreen_event:
+						handleWriteToScreenEvent();
+						break;
+						
+					default:
+						break;
+				}
+			}
 		}
+	
 	}
 	return 0;
 }

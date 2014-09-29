@@ -278,4 +278,28 @@ inline void endian16_swap(uint16_t* n)
 	*n |= a;
 }
 
+
+void printHex16(uint16_t val)
+{
+	enum
+	{
+		bufSize = 9,
+	};
+	
+	char buf[bufSize];
+	buf[0] = '0';
+	buf[1] = 'x';
+	buf[6] = '\n';
+	buf[7] = '\r';
+	buf[8] = '\0';
+	
+	for(int i = 5; i >= 2; i--)
+	{
+		buf[i] = ((val & 0xF) > 9) ? (((val & 0xF) - 10) + 'A') : ((val & 0xF) + '0');
+		val = val >> 4;
+	}
+	
+	_write(0, buf, bufSize);
+}
+
 //EOF
