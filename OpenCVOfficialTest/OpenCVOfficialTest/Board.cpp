@@ -186,6 +186,26 @@ Vec2i Board::avgBallOnRod(Vec2i prediction, double* lastXPixVel)
 
 
 
+//
+int Board::convertRodtoEncoderVal(Vec2i rodPos)
+{
+	enum
+	{
+		encoderScalar = 0x3FFF,
+	};
+	
+	int max_rod = MY_MAX(rod1[0][1], rod1[2][1]); 
+	int min_rod = MY_MIN(rod1[0][1], rod1[2][1]);
+	int scalar = max_rod - min_rod;
+	int scaledRodPos = rodPos[1] - min_rod;
+	
+	float ratio = ((float)scaledRodPos)/((float)scalar);
+	
+	return (int)(ratio * ((float)encoderScalar));
+}
+
+
+
 int Board::convertRodtoMotorPulse(Vec2i predictionOffsetFromCurrent)
 {
 	enum

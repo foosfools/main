@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 #include <iostream>
+#include <stdint.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <opencv2/core/core.hpp>
@@ -58,6 +59,8 @@ public:
 	rod1[2][i]   bottom end of goalie rod*/
 	Vec2i rod1[ROD_NUM_ELEMENTS]; 
 	int convertRodtoMotorPulse(Vec2i predictionOffsetFromCurrent); 
+	//rodPos is absolute pixel coordinate of the rod
+	int convertRodtoEncoderVal(Vec2i rodPos);
 };
 
 

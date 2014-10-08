@@ -5,23 +5,24 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+//#define EVENT(evt) void handle_##evt()
+
+
 typedef enum
 {
-	spiRX_event,
+	readEncoder_event,
 	writeToScreen_event,
 	
 	numEvents,
 } events;
 
-static bool eventArr[numEvents];
+static volatile bool eventArr[numEvents];
 
 #define TOTAL_MOTORS 2
 
 #define BUF_COUNT 32
 
 static char buf[BUF_COUNT];
-
-static bool writeToScreen = false;
 
 static uint8_t bufIndex = 0;
 
@@ -31,8 +32,8 @@ static uint8_t bufIndex = 0;
 
 static motor_foop motor_info[] = 
 {	
-	{.step_size = 0, .toggleGPIO_en = false, .step_pin = GPIO_PIN_6, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_0, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_6, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2},
-	{.step_size = 0, .toggleGPIO_en = false, .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5} 
+	{.step_size = 0, .toggleGPIO_en = false, .step_pin = GPIO_PIN_6, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_0, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_6, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2, .encoderVal = 0, .endPos = 0x2280},
+	{.step_size = 0, .toggleGPIO_en = false, .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5, .encoderVal = 0, .endPos = 0} 
 };
 
 
@@ -50,7 +51,7 @@ UARTIntHandler(void)
 		buf[bufIndex] = c;
 		if(buf[bufIndex] == '\r')
 		{
-			writeToScreen = true;
+			eventArr[writeToScreen_event] = true;
 			return;
 		}
 		bufIndex++;
@@ -65,14 +66,14 @@ TIMER0A_Handler(void)
 {
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	uint32_t i; 
-/*
+
 	for(i = 0; i < TOTAL_MOTORS; i++)
 	{
 		if(motor_info[i].toggleGPIO_en)
 		{
 			CRITICAL_START();
 			{
-				GPIOPinWrite(motor_info[i].step_port, 
+				GPIOPinWrite(motor_info[i].step_port,
 					motor_info[i].step_pin, 
 					motor_info[i].stepPin_state);
 				motor_info[i].stepPin_state = ~motor_info[i].stepPin_state;
@@ -84,23 +85,44 @@ TIMER0A_Handler(void)
 			}
 			CRITICAL_END();
 		}
-	}*/
-
-	//size- the size in bytes of the data to be written
-	/*spi_open(motor_info[0].slaveSel_port, motor_info[0].slaveSel_pin);
-	spi_write((uint8_t*) c, 4);
-	spi_close(motor_info[0].slaveSel_port, motor_info[0].slaveSel_pin);*/
-	//eventArr[spiRX_event] = true;
-		uint16_t buf = AS5048_readMagnitude(motor_info[0].slaveSel_port, motor_info[0].slaveSel_pin);
-	printHex16(buf);
+	}
+	
+	CRITICAL_START();
+	{
+		eventArr[readEncoder_event] = true;
+	}
+	CRITICAL_END();
 }
 
 
 
-
-
-static void handleSpiRXEvent()
+static void updateMotorVals()
 {
+	enum
+	{
+		maxEncoderVal = 0x3FFF,
+		maxMotorSteps = 200,
+	};
+	const int32_t threshold = 150;
+	
+	CRITICAL_START();
+	{
+		int32_t difference = ((int32_t)motor_info[0].endPos - (int32_t)motor_info[0].encoderVal);
+	
+		if( difference > threshold || difference < -threshold )
+		{
+			MOTOR_ENABLE(0, ((difference) * maxMotorSteps) / maxEncoderVal, motor_info, (difference < 0) ? false : true);
+		}
+ 	}
+ 	CRITICAL_END();
+}
+
+
+static void readEncoders()
+{
+	motor_info[0].encoderVal = AS5048_readAngle(motor_info[0].slaveSel_port, motor_info[0].slaveSel_pin);
+//	printHex16(motor_info[0].encoderVal);
+	updateMotorVals();
 }
 
 
@@ -111,7 +133,6 @@ static void handleWriteToScreenEvent()
 			_write(0, &c, 1);
 			
 			bufIndex = 0;
-			writeToScreen = false;
 
 			uint8_t motorNum;
 			bool direction;
@@ -119,11 +140,12 @@ static void handleWriteToScreenEvent()
 			
 			if(parsemotorData(buf, &motorNum, &direction, &step_size))
 			{
-				MOTOR_ENABLE(motorNum, step_size, motor_info, direction);
+				motor_info[motorNum].endPos = step_size;
+				readEncoders();
+				//MOTOR_ENABLE(motorNum, step_size, motor_info, direction);
 			}
 			
 			bufIndex = 0;
-			writeToScreen = false;
 
 			for(uint32_t i = 0; i < BUF_COUNT; i++)
 			{
@@ -142,14 +164,14 @@ int main(void)
 	{
 		for(uint32_t event = 0; event < numEvents; event++)
 		{
-			if(eventArr[event])
+			if( eventArr[event] )
 			{
 				eventArr[event] = false;
 				
 				switch(event)
 				{
-					case spiRX_event:
-						handleSpiRXEvent();
+					case readEncoder_event:
+						readEncoders();
 						break;
 						
 					case writeToScreen_event:
@@ -161,7 +183,7 @@ int main(void)
 				}
 			}
 		}
-	
 	}
+	
 	return 0;
 }

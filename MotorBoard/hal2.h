@@ -78,6 +78,11 @@ typedef struct
 	
 	uint32_t slaveSel_port;
 	uint32_t slaveSel_pin;
+	
+	uint16_t encoderVal;
+	
+	uint16_t endPos;
+	
 } motor_foop;
 
 

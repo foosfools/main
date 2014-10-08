@@ -18,7 +18,7 @@ void TimerInit()
 	SysCtlPeripheralReset(SYSCTL_PERIPH_TIMER0);
 	SysCtlDelay(5);
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC);
-	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 1);
+	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 500);
 	IntMasterEnable();
 	TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	IntEnable(INT_TIMER0A);
@@ -167,7 +167,6 @@ void MOTOR_ENABLE(uint32_t num, uint32_t step_size, motor_foop * motorArray, boo
 					(direction) ? motorArray[num].dir_pin : ~motorArray[num].dir_pin);
 		GPIOPinWrite(motorArray[num].sleep_port, motorArray[num].sleep_pin, motorArray[num].sleep_pin);
 		motorArray[num].step_size = step_size;	
-// 		PWMOutputState(motorArray[num].pwm_base, motorArray[num].pwm_outBit, true);	
 		motorArray[num].toggleGPIO_en = true;  	
 	}	
 	CRITICAL_END()							
@@ -179,7 +178,6 @@ void MOTOR_DISABLE(uint32_t num,  motor_foop * motorArray)
 	CRITICAL_START()	
 	{																		
 		motorArray[num].toggleGPIO_en = false;   												
-// 		PWMOutputState(motorArray[num].pwm_base, motorArray[num].pwm_outBit, false);	
 		motorArray[num].step_size = 0;	
 		GPIOPinWrite(motorArray[num].sleep_port, motorArray[num].sleep_pin, ~(motorArray[num].sleep_pin));	
 	}	

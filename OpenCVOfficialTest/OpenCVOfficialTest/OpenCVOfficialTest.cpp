@@ -895,25 +895,20 @@ void OpenCVOfficialTest::TrackBall() {
 		Vec2i ballOnRodComp = board.getBallPredictionOnRod(board.rod1);
 		Vec2i avgballOnRodComp = board.avgBallOnRod(ballOnRodComp, &lastXVel);
 		
-		//cout << "prediction: " << ballOnRodComp[0] << "  " << ballOnRodComp[1]<< endl;
-		
 		if(avgballOnRodComp[0] != -1)
 		{
 			Vec2i temp;
 			double goalieBallArrivalTime_s = 0.0;
 			
-			temp[1] = avgballOnRodComp[1] - board.rod1[1][1];
-			int motor_rod = board.convertRodtoMotorPulse(temp);
+			int motor_rod = board.convertRodtoEncoderVal(board.rod1[1][1]);
 			board.rod1[1][1] = avgballOnRodComp[1]; 
 			
 			uint8_t bufSize = 10;
 			char outBufA[bufSize];
 			char outBufB[bufSize];
-			this->createMotorCommand(motor_rod, 1, outBufA);
+			this->createMotorCommand(motor_rod, 0, outBufA);
 			write(uart_fd, outBufA, strlen(outBufA));
-			
-		//	memset(outBufA, '\0', bufSize);
-			
+
 			goalieBallArrivalTime_s = board.currX / lastXVel;
 			
 			if(goalieBallArrivalTime_s < 0 && goalieBallArrivalTime_s >= -0.1)
@@ -934,19 +929,15 @@ void OpenCVOfficialTest::TrackBall() {
 				3);
 		drawObject(frame, board.currX, board.currY, 0, 0, 255);
 
-		//controller.moveGoalie(board.currY);
-	//	controller.rotateGoalie(board.currX);
-		//controller.moveGoalie(board.currY - 120);
 		if (DISPLAY_WINDOWS) {
 			line(frame, Point(board.rod1[0][0], board.rod1[0][1]),
 			Point(board.rod1[2][0], board.rod1[2][1]), Scalar(0, 0, 255), 10, CV_AA);
 			imshow(windowName, frame);
 		}
-		//cout << "rod: " << board.rod1[0][0] << endl;
+		
 		clock_t endTime = clock();
 		clock_t clockTicksTaken = endTime - startTime;
 		double fps = (double) (CLOCKS_PER_SEC / clockTicksTaken);
-		//cout << "fps: " << fps << ","<< board.currX << "," << board.currY << endl;
 
 		waitKey(10);
 	}
