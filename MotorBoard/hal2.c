@@ -6,10 +6,14 @@
 #include "AS5048.h"
 #include "foos_spi.h"
 
+
+
 int strcmp(const char *a,const char *b){
   if (! (*a | *b)) return 0;
   return (*a!=*b) ? *a-*b : strcmp(++a,++b);
 }
+
+
 
 void TimerInit()
 {
@@ -18,12 +22,13 @@ void TimerInit()
 	SysCtlPeripheralReset(SYSCTL_PERIPH_TIMER0);
 	SysCtlDelay(5);
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC);
-	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 500);
+	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 10);
 	IntMasterEnable();
 	TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	IntEnable(INT_TIMER0A);
 	TimerEnable(TIMER0_BASE, TIMER_A);
 }
+
 
 
 void UARTInit()
@@ -50,53 +55,10 @@ void systemInit(motor_foop* motorArray, uint8_t totalMotors)
 	SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
 					 SYSCTL_XTAL_16MHZ);
 	UARTInit();
-	//stepSizePinsInit();
-// 	PWMInit(motorArray, totalMotors);
 	TimerInit();
 	motorsPinsInit(motorArray, totalMotors);
 	AS5048_init(motorArray, totalMotors);
 }
-
-/*
-void PWMInit(motor_foop* motorArray, uint32_t totalMotors)
-{
-	uint32_t prescale = 1;
-		
-	SysCtlPWMClockSet(SYSCTL_PWMDIV_1);
-	
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0); // motor 0
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM1); // motor 1
-	
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
-    
-    GPIOPinConfigure(GPIO_PB6_M0PWM0); // motor 0 PWM
-    GPIOPinConfigure(GPIO_PB7_M0PWM1); // motor 1
-    
-    for(int i = 0; i < totalMotors; i++)
-    {
-    	GPIOPinTypePWM(motorArray[i].step_port, motorArray[i].step_pin);
-    }
-    
-	PWMGenConfigure(PWM0_BASE, PWM_GEN_0,
-                    PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
-	PWMGenConfigure(PWM1_BASE, PWM_GEN_0,
-                    PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
-                    
-	  //N = (1 / f) * SysClk
-	PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, 64000 / prescale); // motor 0
-	
-		//50% duty cycle
-	PWMPulseWidthSet(PWM0_BASE, PWM_OUT_0, 32000 / prescale); // motor 0
-	PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, 32000 / prescale); // motor 1
-	IntMasterEnable();
-
-	for(int i = 0; i < totalMotors; i++)
-    {
-		PWMOutputState(motorArray[i].pwm_base, motorArray[i].pwm_outBit, false); //motor0
-    }
-
-    PWMGenEnable(PWM0_BASE, PWM_GEN_0);
-}*/
 
 
 
@@ -157,20 +119,21 @@ void stepSizeSet(stepSize size)
 	}
 }
 
-void MOTOR_ENABLE(uint32_t num, uint32_t step_size, motor_foop * motorArray, bool direction)												    
+
+
+void MOTOR_ENABLE(uint32_t num, motor_foop * motorArray, bool direction)												    
 {
 	CRITICAL_START()	
-	{						
-															 									
+	{									 									
 		GPIOPinWrite(motorArray[num].dir_port, 
 					motorArray[num].dir_pin, 
-					(direction) ? motorArray[num].dir_pin : ~motorArray[num].dir_pin);
+					(direction) ? ~motorArray[num].dir_pin : motorArray[num].dir_pin);
 		GPIOPinWrite(motorArray[num].sleep_port, motorArray[num].sleep_pin, motorArray[num].sleep_pin);
-		motorArray[num].step_size = step_size;	
 		motorArray[num].toggleGPIO_en = true;  	
 	}	
 	CRITICAL_END()							
 }
+
 
 
 void MOTOR_DISABLE(uint32_t num,  motor_foop * motorArray)														    
@@ -178,7 +141,6 @@ void MOTOR_DISABLE(uint32_t num,  motor_foop * motorArray)
 	CRITICAL_START()	
 	{																		
 		motorArray[num].toggleGPIO_en = false;   												
-		motorArray[num].step_size = 0;	
 		GPIOPinWrite(motorArray[num].sleep_port, motorArray[num].sleep_pin, ~(motorArray[num].sleep_pin));	
 	}	
 	CRITICAL_END()			     			

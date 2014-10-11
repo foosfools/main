@@ -28,7 +28,7 @@
 #define M1_PORT GPIO_PORTF_BASE
 #define M2_PORT GPIO_PORTE_BASE
 
-static uint32_t criticalRegionCount = 0;
+static volatile uint32_t criticalRegionCount = 0;
 
 
 
@@ -62,7 +62,6 @@ typedef enum
 
 typedef struct
 {
-	uint32_t step_size; 
 	bool toggleGPIO_en; 
 	
 	uint32_t step_pin;
@@ -101,7 +100,7 @@ void TimerInit(void);
 
 void motorSleepDirPinsInit(motor_foop* motorArray, uint8_t totalMotors);
 
-void MOTOR_ENABLE(uint32_t num, uint32_t step_size, motor_foop * motorArray, bool direction);
+void MOTOR_ENABLE(uint32_t num, motor_foop * motorArray, bool direction);
 
 void MOTOR_DISABLE(uint32_t num, motor_foop * motorArray);
 

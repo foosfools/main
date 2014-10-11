@@ -5,8 +5,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-//#define EVENT(evt) void handle_##evt()
-
+#pragma GCC optimize ("unroll-loops")
 
 typedef enum
 {
@@ -19,8 +18,7 @@ typedef enum
 static volatile bool eventArr[numEvents];
 
 #define TOTAL_MOTORS 2
-
-#define BUF_COUNT 32
+#define BUF_COUNT    32
 
 static char buf[BUF_COUNT];
 
@@ -28,12 +26,10 @@ static uint8_t bufIndex = 0;
 
 
 
-
-
 static motor_foop motor_info[] = 
 {	
-	{.step_size = 0, .toggleGPIO_en = false, .step_pin = GPIO_PIN_6, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_0, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_6, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2, .encoderVal = 0, .endPos = 0x2280},
-	{.step_size = 0, .toggleGPIO_en = false, .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5, .encoderVal = 0, .endPos = 0} 
+	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_6, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_0, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_6, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2, .encoderVal = 0, .endPos = 0x2280},
+	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5, .encoderVal = 0, .endPos = 0x0000} 
 };
 
 
@@ -76,12 +72,7 @@ TIMER0A_Handler(void)
 				GPIOPinWrite(motor_info[i].step_port,
 					motor_info[i].step_pin, 
 					motor_info[i].stepPin_state);
-				motor_info[i].stepPin_state = ~motor_info[i].stepPin_state;
-				if(motor_info[i].step_size == 0)
-				{
-					MOTOR_DISABLE(i, motor_info);
-				}				
-				motor_info[i].step_size--;
+				motor_info[i].stepPin_state = ~motor_info[i].stepPin_state;			
 			}
 			CRITICAL_END();
 		}
@@ -102,16 +93,25 @@ static void updateMotorVals()
 	{
 		maxEncoderVal = 0x3FFF,
 		maxMotorSteps = 200,
+		threshold     = 50,
 	};
-	const int32_t threshold = 150;
 	
 	CRITICAL_START();
 	{
-		int32_t difference = ((int32_t)motor_info[0].endPos - (int32_t)motor_info[0].encoderVal);
-	
-		if( difference > threshold || difference < -threshold )
+		int32_t difference = 0;
+		
+		for(uint32_t i = 0; i < TOTAL_MOTORS; i++)
 		{
-			MOTOR_ENABLE(0, ((difference) * maxMotorSteps) / maxEncoderVal, motor_info, (difference < 0) ? false : true);
+			difference = ((int32_t)motor_info[i].endPos - (int32_t)motor_info[i].encoderVal);
+	
+			if( difference > threshold || difference < -threshold )
+			{
+				MOTOR_ENABLE(i, motor_info, (difference < 0) ? false : true);
+			}
+			else
+			{
+				MOTOR_DISABLE(i, motor_info);
+			}
 		}
  	}
  	CRITICAL_END();
@@ -120,9 +120,12 @@ static void updateMotorVals()
 
 static void readEncoders()
 {
-	motor_info[0].encoderVal = AS5048_readAngle(motor_info[0].slaveSel_port, motor_info[0].slaveSel_pin);
-//	printHex16(motor_info[0].encoderVal);
-	updateMotorVals();
+	for(uint32_t i = 0; i < TOTAL_MOTORS; i++)
+	{
+		motor_info[i].encoderVal = AS5048_readAngle(motor_info[i].slaveSel_port, motor_info[i].slaveSel_pin);
+		printHex16(motor_info[i].encoderVal);
+		updateMotorVals();
+	}
 }
 
 
@@ -136,13 +139,11 @@ static void handleWriteToScreenEvent()
 
 			uint8_t motorNum;
 			bool direction;
-			uint32_t step_size;
+			uint32_t endPos;
 			
-			if(parsemotorData(buf, &motorNum, &direction, &step_size))
+			if(parsemotorData(buf, &motorNum, &direction, &endPos))
 			{
-				motor_info[motorNum].endPos = step_size;
-				readEncoders();
-				//MOTOR_ENABLE(motorNum, step_size, motor_info, direction);
+				motor_info[motorNum].endPos = endPos;
 			}
 			
 			bufIndex = 0;
@@ -152,6 +153,8 @@ static void handleWriteToScreenEvent()
 			   buf[i] = '\0'; 
 			}	
 }
+
+
 
 int main(void)
 {

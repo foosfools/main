@@ -900,25 +900,30 @@ void OpenCVOfficialTest::TrackBall() {
 			Vec2i temp;
 			double goalieBallArrivalTime_s = 0.0;
 			
-			int motor_rod = board.convertRodtoEncoderVal(board.rod1[1][1]);
+			int motor_rod = board.convertRodtoEncoderVal(board.rod1[1]);
 			board.rod1[1][1] = avgballOnRodComp[1]; 
 			
 			uint8_t bufSize = 10;
 			char outBufA[bufSize];
 			char outBufB[bufSize];
+			for(uint32_t i = 0; i < bufSize; i++)
+			{
+				outBufA[i] = '\0';
+			}
 			this->createMotorCommand(motor_rod, 0, outBufA);
+			
 			write(uart_fd, outBufA, strlen(outBufA));
 
 			goalieBallArrivalTime_s = board.currX / lastXVel;
 			
 			if(goalieBallArrivalTime_s < 0 && goalieBallArrivalTime_s >= -0.1)
 			{
-				this->createMotorCommand(-800, 0, outBufB);
+				//this->createMotorCommand(-800, 0, outBufB);
 				write(uart_fd, outBufB, strlen(outBufB));
 			}
 			
 			cout << "motor pulse: " << motor_rod << endl; 
-			cout << "goalieBallArrivalTime_s " << goalieBallArrivalTime_s << endl; 
+			cout << "outBufA " << outBufA << endl; 
 			circle(frame, Point(avgballOnRodComp[0], avgballOnRodComp[1]), 10, Scalar(0, 255, 0), 3, 8, 0);
 		}
 		
@@ -950,6 +955,7 @@ void OpenCVOfficialTest::createMotorCommand(int motorPulse, int motorNum, char* 
 	int motorNum_index = 2;
 	
 	int index = 0;
+
 	
 	outBuf[index++] = motorNum + '0';
 	outBuf[index++] = ':';
