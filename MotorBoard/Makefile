@@ -12,9 +12,9 @@ es -Xlinker -Wl,-Map,WTimer.map -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=f
 LD=${PREFIX}-ld
 CC=${PREFIX}-gcc
 
-C_SOURCE_FILES+=main2.c
+C_SOURCE_FILES+=main.c
 C_SOURCE_FILES+=startup_gcc.c
-C_SOURCE_FILES+=hal2.c
+C_SOURCE_FILES+=hal.c
 C_SOURCE_FILES+=retarget.c
 C_SOURCE_FILES+=AS5048.c
 C_SOURCE_FILES+=foos_spi.c

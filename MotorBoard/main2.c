@@ -26,11 +26,11 @@ static uint8_t bufIndex = 0;
 
 
 
-static motor_foop motor_info[] = 
+static volatile motor_foop motor_info[] = 
 {	
-	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_6, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_0, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_6, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2, .encoderVal = 0, .endPos = 0x2280},
-	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5, .encoderVal = 0, .endPos = 0x0000} 
-};
+	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_6, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_0, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_6, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2, .encoderVal = 0, .endPos = 0x2DE0, .midPoint = 0x2DE0},
+	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5, .encoderVal = 0, .endPos = 0x1E70, .midPoint = 0x1E70} 
+};																																																																							// .endPos = 0x07FE, .midPoint = 0x07FE		
 
 
 	
@@ -57,12 +57,12 @@ UARTIntHandler(void)
 
 
 
-void
-TIMER0A_Handler(void)
+void TIMER0A_Handler(void)
 {
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	uint32_t i; 
-
+	static bool readEncoder = true;
+	
 	for(i = 0; i < TOTAL_MOTORS; i++)
 	{
 		if(motor_info[i].toggleGPIO_en)
@@ -72,17 +72,19 @@ TIMER0A_Handler(void)
 				GPIOPinWrite(motor_info[i].step_port,
 					motor_info[i].step_pin, 
 					motor_info[i].stepPin_state);
-				motor_info[i].stepPin_state = ~motor_info[i].stepPin_state;			
+				motor_info[i].stepPin_state = ~motor_info[i].stepPin_state;
 			}
 			CRITICAL_END();
 		}
 	}
-	
+
 	CRITICAL_START();
+	if( readEncoder )
 	{
 		eventArr[readEncoder_event] = true;
 	}
 	CRITICAL_END();
+	readEncoder = !readEncoder;
 }
 
 
@@ -91,19 +93,18 @@ static void updateMotorVals()
 {
 	enum
 	{
-		maxEncoderVal = 0x3FFF,
 		maxMotorSteps = 200,
-		threshold     = 50,
+		threshold     = 200,
 	};
 	
 	CRITICAL_START();
 	{
-		int32_t difference = 0;
+		volatile int32_t difference = 0;
 		
 		for(uint32_t i = 0; i < TOTAL_MOTORS; i++)
 		{
-			difference = ((int32_t)motor_info[i].endPos - (int32_t)motor_info[i].encoderVal);
-	
+			//difference = ((int32_t)motor_info[i].endPos - (int32_t)motor_info[i].encoderVal);
+			difference = distBetweenValues(motor_info[i].offset, (uint32_t)motor_info[i].endPos, (uint32_t)motor_info[i].encoderVal);
 			if( difference > threshold || difference < -threshold )
 			{
 				MOTOR_ENABLE(i, motor_info, (difference < 0) ? false : true);
@@ -123,9 +124,9 @@ static void readEncoders()
 	for(uint32_t i = 0; i < TOTAL_MOTORS; i++)
 	{
 		motor_info[i].encoderVal = AS5048_readAngle(motor_info[i].slaveSel_port, motor_info[i].slaveSel_pin);
-		printHex16(motor_info[i].encoderVal);
-		updateMotorVals();
+	//	printHex16(motor_info[i].encoderVal);
 	}
+	updateMotorVals();
 }
 
 
@@ -143,7 +144,16 @@ static void handleWriteToScreenEvent()
 			
 			if(parsemotorData(buf, &motorNum, &direction, &endPos))
 			{
-				motor_info[motorNum].endPos = endPos;
+				if( endPos > 15500 ) //makes sure that endpos is in reachable range, otherwise it would keep hitting the edge of the table
+				{
+					endPos = 15500;
+				}
+				else if( endPos < 900 )
+				{
+					endPos = 900;
+				} 
+				
+				motor_info[motorNum].endPos = (endPos + motor_info[motorNum].offset) & maxEncoderVal;
 			}
 			
 			bufIndex = 0;
@@ -160,8 +170,6 @@ int main(void)
 {
     volatile uint32_t ui32Loop;
 	systemInit(motor_info, TOTAL_MOTORS);
-
-	int i; 
 		
 	for(;;)
 	{

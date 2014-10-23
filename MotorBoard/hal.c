@@ -15,7 +15,7 @@ void TimerInit()
 	SysCtlPeripheralReset(SYSCTL_PERIPH_TIMER0);
 	SysCtlDelay(5);
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC);
-	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 1000);
+	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 4000);
 	IntMasterEnable();
 	TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	IntEnable(INT_TIMER0A);

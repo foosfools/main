@@ -32,6 +32,12 @@ static volatile uint32_t criticalRegionCount = 0;
 
 
 
+enum
+{
+	maxEncoderVal = 0x3FFF,
+};
+
+
 #define CRITICAL_START()    \
 { 							\
 	IntMasterDisable();     \
@@ -82,15 +88,21 @@ typedef struct
 	
 	uint16_t endPos;
 	
+	uint16_t midPoint;
+
+	int32_t offset;	//describes encoder offset from maxEncoderVal / 2 to midPoint
+	
 } motor_foop;
 
 
+
+int32_t distBetweenValues(int32_t offset, uint32_t valueA, uint32_t valueB);
 
 void UARTInit(void);
 
 void systemInit(motor_foop* motorArray, uint8_t totalMotors);
 
-//void PWMInit(motor_foop* motorArray, uint32_t totalMotors);
+void motorsInit(motor_foop* motorArray, uint8_t totalMotors);
 
 void stepSizePinsInit(void);
 

@@ -9,7 +9,7 @@
 
 
 int strcmp(const char *a,const char *b){
-  if (! (*a | *b)) return 0;
+  if (! (*a | *b) ) return 0;
   return (*a!=*b) ? *a-*b : strcmp(++a,++b);
 }
 
@@ -22,7 +22,7 @@ void TimerInit()
 	SysCtlPeripheralReset(SYSCTL_PERIPH_TIMER0);
 	SysCtlDelay(5);
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC);
-	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 10);
+	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 1000);
 	IntMasterEnable();
 	TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	IntEnable(INT_TIMER0A);
@@ -56,7 +56,7 @@ void systemInit(motor_foop* motorArray, uint8_t totalMotors)
 					 SYSCTL_XTAL_16MHZ);
 	UARTInit();
 	TimerInit();
-	motorsPinsInit(motorArray, totalMotors);
+	motorsInit(motorArray, totalMotors);
 	AS5048_init(motorArray, totalMotors);
 }
 
@@ -148,7 +148,7 @@ void MOTOR_DISABLE(uint32_t num,  motor_foop * motorArray)
 
 
 
-void motorsPinsInit(motor_foop* motorArray, uint8_t totalMotors)
+void motorsInit(motor_foop* motorArray, uint8_t totalMotors)
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
     
@@ -163,7 +163,11 @@ void motorsPinsInit(motor_foop* motorArray, uint8_t totalMotors)
 		
 		GPIOPinTypeGPIOOutput(motorArray[i].step_port, motorArray[i].step_pin);
 		GPIOPinWrite(motorArray[i].step_port, motorArray[i].step_pin, ~motorArray[i].step_pin);
+		
+		motorArray[i].offset = (int32_t)motorArray[i].midPoint - (maxEncoderVal / 2);
 	}
+	
+	
 }
 
 
@@ -201,7 +205,7 @@ bool parsemotorData(char* c, uint8_t* motorNum, bool* direction, uint32_t* time_
 
 int32_t stringToInt(char* c)
 {
-	bool isNegative;
+	bool isNegative = false;
 	uint8_t count = 0;
 	char ch = c[0];
 	
@@ -260,6 +264,14 @@ void printHex16(uint16_t val)
 	}
 	
 	_write(0, buf, bufSize);
+}
+
+
+int32_t distBetweenValues(int32_t offset, uint32_t valueA, uint32_t valueB)
+{
+	int32_t result = (((int)valueA - offset) & maxEncoderVal) - (((int)valueB - offset) & maxEncoderVal);
+	
+	return result;
 }
 
 //EOF
