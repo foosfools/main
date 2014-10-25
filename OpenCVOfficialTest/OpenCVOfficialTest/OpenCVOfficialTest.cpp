@@ -903,7 +903,7 @@ void OpenCVOfficialTest::TrackBall() {
 			int motor_rod = board.convertRodtoEncoderVal(board.rod1[1]);
 			board.rod1[1][1] = avgballOnRodComp[1]; 
 			
-			uint8_t bufSize = 10;
+			uint8_t bufSize = 12;
 			char outBufA[bufSize];
 			char outBufB[bufSize];
 			for(uint32_t i = 0; i < bufSize; i++)
@@ -916,9 +916,9 @@ void OpenCVOfficialTest::TrackBall() {
 
 			goalieBallArrivalTime_s = board.currX / lastXVel;
 			
-			if(goalieBallArrivalTime_s < 0 && goalieBallArrivalTime_s >= -0.1)
+			if(goalieBallArrivalTime_s < 0 && goalieBallArrivalTime_s >= -0.2)
 			{
-				//this->createMotorCommand(-800, 0, outBufB);
+				this->createMotorCommand((0x3FFF / 2) - 1200, 1, outBufB);
 				write(uart_fd, outBufB, strlen(outBufB));
 			}
 			

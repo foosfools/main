@@ -92,6 +92,8 @@ typedef struct
 
 	int32_t offset;	//describes encoder offset from maxEncoderVal / 2 to midPoint
 	
+	bool isKickMotor; //determines if the motor is a rotational motor
+	
 } motor_foop;
 
 

@@ -28,8 +28,8 @@ static uint8_t bufIndex = 0;
 
 static volatile motor_foop motor_info[] = 
 {	
-	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_6, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_0, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_6, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2, .encoderVal = 0, .endPos = 0x2DE0, .midPoint = 0x2DE0},
-	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5, .encoderVal = 0, .endPos = 0x1E70, .midPoint = 0x1E70} 
+	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_6, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_0, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_6, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2, .encoderVal = 0, .endPos = 0x09E5, .midPoint = 0x09E5, .isKickMotor = false},
+	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5, .encoderVal = 0, .endPos = 0x1E70, .midPoint = 0x1E70, .isKickMotor = true} 
 };																																																																							// .endPos = 0x07FE, .midPoint = 0x07FE		
 
 
@@ -94,7 +94,7 @@ static void updateMotorVals()
 	enum
 	{
 		maxMotorSteps = 200,
-		threshold     = 200,
+		threshold     = 100,
 	};
 	
 	CRITICAL_START();
@@ -111,7 +111,15 @@ static void updateMotorVals()
 			}
 			else
 			{
-				MOTOR_DISABLE(i, motor_info);
+			
+				if( motor_info[i].isKickMotor &&  (motor_info[i].endPos != motor_info[i].midPoint) )
+				{
+					motor_info[i].endPos = motor_info[i].midPoint;
+				}
+				else
+				{
+					MOTOR_DISABLE(i, motor_info);
+				}
 			}
 		}
  	}
