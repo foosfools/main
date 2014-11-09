@@ -6,6 +6,7 @@ Rod::Rod(int32_t xPos, int32_t minY, int32_t maxY, uint8_t numPlayers, uint8_t t
 : xPos(xPos), minY(minY), maxY(maxY), numPlayers(numPlayers), transMotor_num(transMotor_num), kickMotor_num(kickMotor_num)
 {
 	this->currentY = (minY + maxY) / 2;
+	currentAvgBallIndex = 0;
 }
 
 
@@ -15,24 +16,18 @@ Board::Board(int currentX, int currentY)
 	currY = currentY;
 	lastBallVelocity = 0.0;
 	lastBallVelocity_pixPerSecX = 0.0;
+	
 	//latest components of velocity for ball
 	lastXComp = 0.0;
 	lastYComp = 0.0;
+	
 	//coordinates from previous frame of ball
 	prevX = currX;
 	prevY = currY;
 	lastGoaliePos[0] = 0;
 	lastGoaliePos[1] = 0;
-	
-	rod1[0][0] = 53; //x component has to be the same for goalie rod
-	rod1[0][1] = 102; 
-	rod1[2][0] = rod1[0][0]; 
-	rod1[2][1] = 179; 
-	rod1[1][0] = (rod1[0][0] + rod1[2][0]) / 2; 
-	rod1[1][1] = (rod1[0][1] + rod1[2][1]) / 2; 
-
-	rods[0] = Rod(53, 102, 179, 1, 0, 0);
-	//rods[1] = Rod(int32_t xPos, int32_t minY, int32_t maxY, uint8_t numPlayers, uint8_t transMotor_num, uint8_t kickMotor_num);
+	ballVelAvgArr_index = 0;
+	rods[0] = new Rod(53, 102, 179, 1, 0, 0);
 }
 
 
@@ -42,7 +37,7 @@ Board::Board() : Board(0, 0)
 
 
 
-Vec2f Board::updateBallVelocity()
+Vec2f Board::updateBallVelocity(double* lastXVel)
 {
 	enum
 	{
@@ -95,27 +90,27 @@ Vec2f Board::updateBallVelocity()
 
 
 
-Vec2i Board::getBallPredictionOnRod(Vec2i rod[ROD_NUM_ELEMENTS])
+Vec2i Board::getBallPredictionOnRod(Rod* rod)
 {
 	Vec2i result;
 	
 	float theta = acos(lastXComp);
 	
-	int32_t distanceX = (currX - rod[0][0]);
+	int32_t distanceX = (currX - rod->xPos);
 	
 	int32_t distanceY = ((float)distanceX) * tan(theta);
 	
 	int32_t resultY = (lastYComp < 0) ? (currY + distanceY) : (currY - distanceY);
 
 	
-	if( resultY < (MY_MIN(rod[0][1], rod[2][1])) || resultY > (MY_MAX(rod[0][1], rod[2][1])) )
+	if( resultY < rod->minY || resultY > rod->maxY )
 	{
 		result[0] = -1;
 		result[1] = -1;
 	}
 	else
 	{
-		result[0] = rod[0][0];
+		result[0] = rod->xPos;
 		result[1] = resultY;
 	}
 	
@@ -124,16 +119,12 @@ Vec2i Board::getBallPredictionOnRod(Vec2i rod[ROD_NUM_ELEMENTS])
 
 
 
-Vec2i Board::avgBallOnRod(Vec2i prediction, double* lastXPixVel)
+Vec2i Board::avgBallOnRod(Vec2i prediction, double* lastXPixVel, Rod* rod)
 {
-	enum
-	{
-		numOfFrames = 6,
-	};
-	
+
 	Vec2i result;
-	static Vec2i avgArr[numOfFrames];
-	static double velArr[numOfFrames];
+//	static Vec2i avgArr[FRAMES_TO_AVG_FOR_VEL_NUM];
+	static double velArr[FRAMES_TO_AVG_FOR_VEL_NUM];
 	
 	static int index = 0;
 	
@@ -146,25 +137,25 @@ Vec2i Board::avgBallOnRod(Vec2i prediction, double* lastXPixVel)
 		return result;
 	}
 	velArr[index]   = lastBallVelocity_pixPerSecX;
-	avgArr[index++] = prediction;
+	rod->avgBallOnRodArr[index++] = prediction;
 	
-	if(index == numOfFrames)
+	if(index == FRAMES_TO_AVG_FOR_VEL_NUM)
 	{
 		index = 0;
 		
-		int sumX = 0;
-		int sumY = 0;
+		int sumX   = 0;
+		int sumY   = 0;
 		int velSum = 0;
 		
-		for(int i = 0; i < numOfFrames; i++)
+		for(int i = 0; i < FRAMES_TO_AVG_FOR_VEL_NUM; i++)
 		{
-			sumX += avgArr[i][0];
-			sumY += avgArr[i][1]; 
+			sumX += rod->avgBallOnRodArr[i][0];
+			sumY += rod->avgBallOnRodArr[i][1]; 
 			velSum += velArr[i];
 		}
-		result[0] = sumX / numOfFrames;
-		result[1] = sumY / numOfFrames;
-		*lastXPixVel = velSum / numOfFrames;
+		result[0] = sumX / FRAMES_TO_AVG_FOR_VEL_NUM;
+		result[1] = sumY / FRAMES_TO_AVG_FOR_VEL_NUM;
+		*lastXPixVel = velSum / FRAMES_TO_AVG_FOR_VEL_NUM;
 	}
 	else
 	{
@@ -179,38 +170,19 @@ Vec2i Board::avgBallOnRod(Vec2i prediction, double* lastXPixVel)
 
 
 //
-int Board::convertRodtoEncoderVal(Vec2i rodPos)
+int Board::convertRodtoEncoderVal(Rod* rod)
 {
 	enum
 	{
 		encoderScalar = 0x3FFF,
 	};
 	
-	int max_rod = MY_MAX(rod1[0][1], rod1[2][1]); 
-	int min_rod = MY_MIN(rod1[0][1], rod1[2][1]);
-	int scalar = max_rod - min_rod;
-	int scaledRodPos = rodPos[1] - min_rod;
+	int scalar = rod->maxY - rod->minY;
+	int scaledRodPos = rod->currentY - rod->minY;
 	
 	float ratio = ((float)scaledRodPos)/((float)scalar);
 	
 	return (int)(ratio * ((float)encoderScalar));
-}
-
-
-
-int Board::convertRodtoMotorPulse(Vec2i predictionOffsetFromCurrent)
-{
-	enum
-	{
-		motor_scalar = 675,
-	};
-	
-	int max_rod = MY_MAX(rod1[0][1], rod1[2][1]); 
-	int min_rod = MY_MIN(rod1[0][1], rod1[2][1]);
-	
-	float ratio = ((float)predictionOffsetFromCurrent[1])/((float)(max_rod - min_rod));
-	float f_result = ratio * (2 * (motor_scalar));
-	return ( (int)f_result ); 
 }
 
 //EOF

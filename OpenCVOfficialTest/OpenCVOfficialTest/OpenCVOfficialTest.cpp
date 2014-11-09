@@ -888,22 +888,23 @@ void OpenCVOfficialTest::TrackBall() {
 
 		//sets globals for ball
 		IdentifyBall();
-
-		//update ball params if the ball is identified
-		board.updateBallVelocity();
+		
 		double lastXVel = 0.0;
-		Vec2i ballOnRodComp = board.getBallPredictionOnRod(board.rod1);
-		Vec2i avgballOnRodComp = board.avgBallOnRod(ballOnRodComp, &lastXVel);
+		//update ball params if the ball is identified
+		
+		board.updateBallVelocity(NULL);
+		Vec2i ballOnRodComp = board.getBallPredictionOnRod(board.rods[0]);
+		Vec2i avgballOnRodComp = board.avgBallOnRod(ballOnRodComp, &lastXVel, board.rods[0]);
 		
 		if(avgballOnRodComp[0] != -1)
 		{
 			Vec2i temp;
 			double goalieBallArrivalTime_s = 0.0;
 			
-			int motor_rod = board.convertRodtoEncoderVal(board.rod1[1]);
-			board.rod1[1][1] = avgballOnRodComp[1]; 
+			int motor_rod = board.convertRodtoEncoderVal(board.rods[0]);
+			board.rods[0]->currentY = avgballOnRodComp[1]; 
 			
-			uint8_t bufSize = 12;
+			const uint8_t bufSize = 16;
 			char outBufA[bufSize];
 			char outBufB[bufSize];
 			for(uint32_t i = 0; i < bufSize; i++)
@@ -935,8 +936,8 @@ void OpenCVOfficialTest::TrackBall() {
 		drawObject(frame, board.currX, board.currY, 0, 0, 255);
 
 		if (DISPLAY_WINDOWS) {
-			line(frame, Point(board.rod1[0][0], board.rod1[0][1]),
-			Point(board.rod1[2][0], board.rod1[2][1]), Scalar(0, 0, 255), 10, CV_AA);
+			line(frame, Point(board.rods[0]->xPos, board.rods[0]->minY),
+			Point(board.rods[0]->xPos, board.rods[0]->maxY), Scalar(0, 0, 255), 10, CV_AA);
 			imshow(windowName, frame);
 		}
 		
