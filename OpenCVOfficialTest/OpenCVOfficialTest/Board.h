@@ -20,9 +20,24 @@
 #define MY_MIN(a,b) ((a < b) ? a : b)
 #define MY_MAX(a,b) ((a > b) ? a : b)
 
-#define ROD_NUM_ELEMENTS 3
+#define ROD_NUM_ELEMENTS (3)
+#define NUM_RODS         (1)
 
 using namespace cv;
+
+class Rod
+{
+	public:
+	Rod(int32_t xPos, int32_t minY, int32_t maxY, uint8_t numPlayers, uint8_t transMotor_num, uint8_t kickMotor_num);
+	int32_t minY;
+	int32_t maxY;
+	int32_t currentY;
+	int32_t xPos;
+	uint8_t numPlayers;
+	uint8_t transMotor_num;
+	uint8_t kickMotor_num;
+}; 
+
 class Board
 {
 public:
@@ -58,6 +73,9 @@ public:
 	rod1[1][i]   goalie location
 	rod1[2][i]   bottom end of goalie rod*/
 	Vec2i rod1[ROD_NUM_ELEMENTS]; 
+
+	Rod	rods[];
+	
 	int convertRodtoMotorPulse(Vec2i predictionOffsetFromCurrent); 
 	//rodPos is absolute pixel coordinate of the rod
 	int convertRodtoEncoderVal(Vec2i rodPos);

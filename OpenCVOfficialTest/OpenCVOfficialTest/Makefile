@@ -8,11 +8,11 @@ C_SRC_FILES += Board.cpp
 C_SRC_FILES += ../../MotorBoard/virtualPort/virtualPort.cpp
 #C_SRC_FILES += motorController.cpp
 
-C_FLAGS:=-stdlib=libstdc++ -O3
+C_FLAGS:=-stdlib=libstdc++ -std=c++11 -O3
 
 all:
 	g++ $(C_FLAGS) $(C_SRC_FILES) -I $(INCLUDES) $(LIBS) -o foosfools
-
+	size foosfools
 clean:
 	rm -rf *.o *~ $(EXECUTABLE)
 cleanPics:

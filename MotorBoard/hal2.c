@@ -22,7 +22,15 @@ void TimerInit()
 	SysCtlPeripheralReset(SYSCTL_PERIPH_TIMER0);
 	SysCtlDelay(5);
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC);
-	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 500);
+	if( PRINT_CALIBRATE )
+	{
+		TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 10);
+	}
+	else
+	{
+		TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 1000);
+	}
+	
 	IntMasterEnable();
 	TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 	IntEnable(INT_TIMER0A);
@@ -127,7 +135,7 @@ void MOTOR_ENABLE(uint32_t num, motor_foop * motorArray, bool direction)
 	{									 									
 		GPIOPinWrite(motorArray[num].dir_port, 
 					motorArray[num].dir_pin, 
-					(direction) ? ~motorArray[num].dir_pin : motorArray[num].dir_pin);
+					(direction == motorArray[num].directionBit) ? ~motorArray[num].dir_pin : motorArray[num].dir_pin);
 		GPIOPinWrite(motorArray[num].sleep_port, motorArray[num].sleep_pin, motorArray[num].sleep_pin);
 		motorArray[num].toggleGPIO_en = true;  	
 	}	

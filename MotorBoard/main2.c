@@ -28,8 +28,8 @@ static uint8_t bufIndex = 0;
 
 static volatile motor_foop motor_info[] = 
 {	
-	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_6, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_0, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_6, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2, .encoderVal = 0, .endPos = 0x09E5, .midPoint = 0x09E5, .isKickMotor = false},
-	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5, .encoderVal = 0, .endPos = 0x1E70, .midPoint = 0x1E70, .isKickMotor = true} 
+	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_6, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_0, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_6, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2, .encoderVal = 0, .endPos =  0x34D0, .midPoint = 0x34D0, .isKickMotor = false, .directionBit = true},
+	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5, .encoderVal = 0, .endPos = 0x2F15, .midPoint = 0x2F15, .isKickMotor = true, .directionBit = true} 
 };																																																																							// .endPos = 0x07FE, .midPoint = 0x07FE		
 
 
@@ -132,7 +132,11 @@ static void readEncoders()
 	for(uint32_t i = 0; i < TOTAL_MOTORS; i++)
 	{
 		motor_info[i].encoderVal = AS5048_readAngle(motor_info[i].slaveSel_port, motor_info[i].slaveSel_pin);
-	//	printHex16(motor_info[i].encoderVal);
+		
+		if( PRINT_CALIBRATE )
+		{
+			printHex16(motor_info[i].encoderVal);
+		}
 	}
 	updateMotorVals();
 }

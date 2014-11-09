@@ -20,6 +20,8 @@
 #include "driverlib/interrupt.h"
 #include "driverlib/timer.h"
 
+#define PRINT_CALIBRATE (1)
+
 //step size config
 #define M0_PIN GPIO_PIN_7
 #define M1_PIN GPIO_PIN_1
@@ -93,6 +95,8 @@ typedef struct
 	int32_t offset;	//describes encoder offset from maxEncoderVal / 2 to midPoint
 	
 	bool isKickMotor; //determines if the motor is a rotational motor
+	
+	bool directionBit;
 	
 } motor_foop;
 

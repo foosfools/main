@@ -2,6 +2,13 @@
 #include "math.h"
 
 
+Rod::Rod(int32_t xPos, int32_t minY, int32_t maxY, uint8_t numPlayers, uint8_t transMotor_num, uint8_t kickMotor_num) 
+: xPos(xPos), minY(minY), maxY(maxY), numPlayers(numPlayers), transMotor_num(transMotor_num), kickMotor_num(kickMotor_num)
+{
+	this->currentY = (minY + maxY) / 2;
+}
+
+
 Board::Board(int currentX, int currentY)
 {
 	currX = currentX;
@@ -23,30 +30,15 @@ Board::Board(int currentX, int currentY)
 	rod1[2][1] = 179; 
 	rod1[1][0] = (rod1[0][0] + rod1[2][0]) / 2; 
 	rod1[1][1] = (rod1[0][1] + rod1[2][1]) / 2; 
+
+	rods[0] = Rod(53, 102, 179, 1, 0, 0);
+	//rods[1] = Rod(int32_t xPos, int32_t minY, int32_t maxY, uint8_t numPlayers, uint8_t transMotor_num, uint8_t kickMotor_num);
 }
 
 
 
-Board::Board()
-{
-	currX = 0;
-	currY = 0;
-	lastBallVelocity = 0.0;
-	//latest components of velocity for ball
-	lastXComp = 0.0;
-	lastYComp = 0.0;
-	//coordinates from previous frame of ball
-	prevX = currX;
-	prevY = currY;
-	lastGoaliePos[0] = 0;
-	lastGoaliePos[1] = 0;
-	rod1[0][0] = 53; //x component has to be the same for goalie rod
-	rod1[0][1] = 102; 
-	rod1[2][0] = rod1[0][0]; 
-	rod1[2][1] = 179; 
-	rod1[1][0] = (rod1[0][0] + rod1[2][0]) / 2; 
-	rod1[1][1] = (rod1[0][1] + rod1[2][1]) / 2; 
-}
+Board::Board() : Board(0, 0)
+{}
 
 
 
