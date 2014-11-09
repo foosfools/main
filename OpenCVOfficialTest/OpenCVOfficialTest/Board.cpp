@@ -37,7 +37,7 @@ Board::Board() : Board(0, 0)
 
 
 
-Vec2f Board::updateBallVelocity(double* lastXVel)
+Vec2f Board::updateBallVelocity(double* avgXVel)
 {
 	enum
 	{
@@ -83,6 +83,8 @@ Vec2f Board::updateBallVelocity(double* lastXVel)
 		timerStarted = true;
 	}
 	
+	*avgXVel = updateBallVelocityAverage(lastBallVelocity_pixPerSecX);
+	
 	frameCount++;
 	
 	return Vec2f(lastXComp, lastYComp);
@@ -94,13 +96,10 @@ Vec2i Board::getBallPredictionOnRod(Rod* rod)
 {
 	Vec2i result;
 	
-	float theta = acos(lastXComp);
-	
+	float theta       = acos(lastXComp);
 	int32_t distanceX = (currX - rod->xPos);
-	
 	int32_t distanceY = ((float)distanceX) * tan(theta);
-	
-	int32_t resultY = (lastYComp < 0) ? (currY + distanceY) : (currY - distanceY);
+	int32_t resultY   = (lastYComp < 0) ? (currY + distanceY) : (currY - distanceY);
 
 	
 	if( resultY < rod->minY || resultY > rod->maxY )
@@ -119,11 +118,10 @@ Vec2i Board::getBallPredictionOnRod(Rod* rod)
 
 
 
-Vec2i Board::avgBallOnRod(Vec2i prediction, double* lastXPixVel, Rod* rod)
+Vec2i Board::avgBallOnRod(Vec2i prediction, Rod* rod)
 {
 
 	Vec2i result;
-//	static Vec2i avgArr[FRAMES_TO_AVG_FOR_VEL_NUM];
 	static double velArr[FRAMES_TO_AVG_FOR_VEL_NUM];
 	
 	static int index = 0;
@@ -133,10 +131,9 @@ Vec2i Board::avgBallOnRod(Vec2i prediction, double* lastXPixVel, Rod* rod)
 		index = 0;
 		result[0] = -1;
 		result[1] = -1;
-		*lastXPixVel = 0.0;
 		return result;
 	}
-	velArr[index]   = lastBallVelocity_pixPerSecX;
+	
 	rod->avgBallOnRodArr[index++] = prediction;
 	
 	if(index == FRAMES_TO_AVG_FOR_VEL_NUM)
@@ -145,23 +142,19 @@ Vec2i Board::avgBallOnRod(Vec2i prediction, double* lastXPixVel, Rod* rod)
 		
 		int sumX   = 0;
 		int sumY   = 0;
-		int velSum = 0;
 		
 		for(int i = 0; i < FRAMES_TO_AVG_FOR_VEL_NUM; i++)
 		{
 			sumX += rod->avgBallOnRodArr[i][0];
 			sumY += rod->avgBallOnRodArr[i][1]; 
-			velSum += velArr[i];
 		}
 		result[0] = sumX / FRAMES_TO_AVG_FOR_VEL_NUM;
 		result[1] = sumY / FRAMES_TO_AVG_FOR_VEL_NUM;
-		*lastXPixVel = velSum / FRAMES_TO_AVG_FOR_VEL_NUM;
 	}
 	else
 	{
 		result[0] = -1;
 		result[1] = -1;
-		*lastXPixVel = 0.0;
 	}
 	
 	return result;
@@ -183,6 +176,34 @@ int Board::convertRodtoEncoderVal(Rod* rod)
 	float ratio = ((float)scaledRodPos)/((float)scalar);
 	
 	return (int)(ratio * ((float)encoderScalar));
+}
+
+
+
+double Board::updateBallVelocityAverage(double lastVelX)
+{
+	static double velArr[FRAMES_TO_AVG_FOR_VEL_NUM];
+	static int index   = 0;
+	
+	velArr[index++] = lastVelX;
+	
+	if(index == FRAMES_TO_AVG_FOR_VEL_NUM)
+	{
+		index = 0;
+		
+		int velSum = 0;
+		
+		for(int i = 0; i < FRAMES_TO_AVG_FOR_VEL_NUM; i++)
+		{
+			velSum += velArr[i];
+		}
+
+		return velSum / FRAMES_TO_AVG_FOR_VEL_NUM;
+	}
+	else
+	{
+		return 0.0;
+	}
 }
 
 //EOF

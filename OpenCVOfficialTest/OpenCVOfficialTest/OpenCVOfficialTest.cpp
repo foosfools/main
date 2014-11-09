@@ -892,9 +892,10 @@ void OpenCVOfficialTest::TrackBall() {
 		double lastXVel = 0.0;
 		//update ball params if the ball is identified
 		
-		board.updateBallVelocity(NULL);
+		board.updateBallVelocity(&lastXVel);
+		
 		Vec2i ballOnRodComp = board.getBallPredictionOnRod(board.rods[0]);
-		Vec2i avgballOnRodComp = board.avgBallOnRod(ballOnRodComp, &lastXVel, board.rods[0]);
+		Vec2i avgballOnRodComp = board.avgBallOnRod(ballOnRodComp, board.rods[0]);
 		
 		if(avgballOnRodComp[0] != -1)
 		{

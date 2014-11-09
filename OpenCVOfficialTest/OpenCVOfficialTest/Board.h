@@ -49,7 +49,7 @@ public:
 	Board(int currentX, int currentY);
 	Board();
 	//updates the velocity of the ball and returns the components of the unit vector
-	Vec2f updateBallVelocity(double* lastXVel);
+	Vec2f updateBallVelocity(double* avgXVel);
 	
 	//returns a coordinate for the prediction when it hits the rod, or -1 if the ball is not going to hit within range of the rod
 	Vec2i getBallPredictionOnRod(Rod* rod);
@@ -67,7 +67,7 @@ public:
 
 	Vec2i lastGoaliePos;
 //returns last x pixVel and avg prediction position, lastXPixVel = NaN if not valid
-	Vec2i avgBallOnRod(Vec2i prediction, double* lastXPixVel, Rod* rod); 
+	Vec2i avgBallOnRod(Vec2i prediction, Rod* rod); 
 	
 	// (x_{0}, y_{0}, x_{1}, y_{1})
 	Vec4i bottomBoard;
@@ -82,6 +82,10 @@ public:
 	
 	//rodPos is absolute pixel coordinate of the rod
 	int convertRodtoEncoderVal(Rod* rod);
+	
+	private:
+	//returns x component of ball velocity average
+	double updateBallVelocityAverage(double lastVelX);
 };
 
 
