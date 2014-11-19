@@ -21,8 +21,9 @@ uint16_t gitParityBit(uint16_t data)
 	}
 	
 	if(parity%2 == 0)
-		return 1<<15; 
-	return 0; 
+		return evenParity_bit; 
+		
+	return oddParity_bit; 
 }
 
 
@@ -31,7 +32,19 @@ static uint16_t read_AS5048 (uint32_t port, uint32_t pin, address_t address)
 {
 	uint16_t buf = address | read_command;
 	
-	buf |= gitParityBit(buf); 
+	if( address == magnitudeReg_address )
+	{
+		buf |= oddParity_bit;
+	}
+	else if( address == angleReg_address )
+	{
+		buf |= evenParity_bit;
+	}
+	else
+	{
+		buf |= gitParityBit(buf);
+	}
+	
 	spi_open(port, pin); 
 	spi_write16(&buf, 1); 
 	spi_close(port, pin); 
@@ -54,7 +67,7 @@ static uint16_t read_AS5048 (uint32_t port, uint32_t pin, address_t address)
 	
 	if(error_bit & result)
 	{
-		errorFlag_clearrr(port, pin);
+		//errorFlag_clearrr(port, pin);
 	}
 	
 	return (uint16_t)result & 0x3FFF;
@@ -78,7 +91,7 @@ void errorFlag_clearrr(uint32_t port, uint32_t pin)
 {
 	uint16_t buf = 0x0001 | read_command;
 	
-	buf |= gitParityBit(buf); 
+	buf |= evenParity_bit; 
 	spi_open(port, pin); 
 	spi_write16(&buf, 1); 
 	spi_close(port, pin); 
@@ -87,12 +100,19 @@ void errorFlag_clearrr(uint32_t port, uint32_t pin)
 	{
 		continue; 
 	}
-	
+	//buf = 0;
 	spi_open(port, pin); 
-	//spi_read((uint8_t*)&result, 2); 
+	//spi_read(&buf, 1); 
 	spi_write16(&buf, 1); 
-	spi_close(port, pin); 
 	
+	uint32_t dummyBuf = 0;
+	while(SSIDataGetNonBlocking(SSI0_BASE, &dummyBuf)) // clears FIFOs
+	continue;
+	
+		spi_close(port, pin); 
+		
+	_write(0, "err: ", 6);
+	printHex16((uint16_t) dummyBuf & 0x3FFF);
 }
 
 //EOF

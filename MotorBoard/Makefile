@@ -1,7 +1,8 @@
 LIB_PATH=..
 LIBC_A=~/Desktop/gcc-arm-none-eabi-4_8-2014q2/arm-none-eabi/lib/libc.a
 LIBGCC_A=~/Desktop/lm4f/lib/gcc/arm-none-eabi/4.7.3/libgcc.a
-
+TIVA_INCLUDE_DIR=~/Desktop/TivaLib
+TIVA_LIB_DIR=~/Desktop/TivaLib/driverlib/gcc
 PREFIX=~/Desktop/gcc-arm-none-eabi-4_8-2014q2/bin/arm-none-eabi
 
 CPU=-mcpu=cortex-m4
@@ -21,9 +22,8 @@ C_SOURCE_FILES+=foos_spi.c
 
 OBJECT_FILES:=$(C_SOURCE_FILES:%.c=%.o)
 
-PART=TM4C123GH6PM
-TIVA_LIB_DIR=~/Desktop/TivaLib/driverlib/gcc
-TIVA_INCLUDE_DIR=~/Desktop/TivaLib
+#PART=TM4C123GH6PM
+PART=TM4C1294NCPDT
 
 LINKER_FILE=lm4fcpp_snowflake.ld
 # The flags passed to the assembler.
@@ -47,9 +47,13 @@ CFLAGS=-mthumb               \
        -pedantic              \
        -DPART_${PART}         \
        -DF_CPU=80000000L      \
-       -DTARGET_IS_TM4C123_RB1 \
-       -I ${TIVA_INCLUDE_DIR} \
+       -DTARGET_IS_TM4C129_RB0 \
+	-I ${TIVA_INCLUDE_DIR} \
        -c                    
+
+
+
+#-DTARGET_IS_TM4C123_RB1
 
 readElf:
 	${PREFIX}-readelf -a ${PROGRAM_NAME}.o
@@ -84,5 +88,5 @@ gdb-openocd:
 	openocd -f /usr/local/share/openocd/scripts/board/ek-tm4c123gxl.cfg
 	
 open:
-	screen /dev/tty.usbmodem0E20ACC1 9600
-	
+	#screen /dev/tty.usbmodem0E20ACC1 9600
+	screen /dev/tty.usbmodem0F0029C1 9600

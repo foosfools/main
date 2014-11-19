@@ -28,8 +28,8 @@ static uint8_t bufIndex = 0;
 
 static volatile motor_foop motor_info[] = 
 {	
-	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_6, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_0, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_6, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2, .encoderVal = 0, .endPos =  0x34D0, .midPoint = 0x34D0, .isKickMotor = false, .directionBit = true},
-	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTB_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5, .encoderVal = 0, .endPos = 0x2F15, .midPoint = 0x2F15, .isKickMotor = true, .directionBit = true} 
+	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_5, .step_port=GPIO_PORTC_BASE, .dir_pin=GPIO_PIN_6, .dir_port=GPIO_PORTC_BASE, .sleep_pin=GPIO_PIN_4, .sleep_port=GPIO_PORTC_BASE, .stepPin_state = GPIO_PIN_5, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2, .encoderVal = 0, .endPos =  0x10FA, .midPoint = 0x10FA, .isKickMotor = false, .directionBit = true},
+	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTA_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5, .encoderVal = 0, .endPos = 0x3EE1, .midPoint = 0x3EE1, .isKickMotor = true, .directionBit = true} 
 };																																																																							// .endPos = 0x07FE, .midPoint = 0x07FE		
 
 
@@ -60,6 +60,7 @@ UARTIntHandler(void)
 void TIMER0A_Handler(void)
 {
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+
 	uint32_t i; 
 	static bool readEncoder = true;
 	
@@ -133,7 +134,7 @@ static void readEncoders()
 	{
 		motor_info[i].encoderVal = AS5048_readAngle(motor_info[i].slaveSel_port, motor_info[i].slaveSel_pin);
 		
-		if( PRINT_CALIBRATE )
+		if( PRINT_CALIBRATE && i == 0 )
 		{
 			printHex16(motor_info[i].encoderVal);
 		}
@@ -181,8 +182,12 @@ static void handleWriteToScreenEvent()
 int main(void)
 {
     volatile uint32_t ui32Loop;
+    
+  //  MAP_SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ | SYSCTL_OSC_MAIN | SYSCTL_USE_PLL | SYSCTL_CFG_VCO_480),
+    //				120000000);
+    
 	systemInit(motor_info, TOTAL_MOTORS);
-		
+	
 	for(;;)
 	{
 		for(uint32_t event = 0; event < numEvents; event++)

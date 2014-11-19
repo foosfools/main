@@ -13,15 +13,20 @@
 
 void spi_init(motor_foop* motorArray, uint32_t totalMotors)
 {
+	volatile uint32_t clock = SysCtlClockGet();
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 	
 	GPIOPinConfigure(GPIO_PA2_SSI0CLK);
+    GPIOPinConfigure(GPIO_PA4_SSI0XDAT0);
+    GPIOPinConfigure(GPIO_PA5_SSI0XDAT1);
+	/*
+	GPIOPinConfigure(GPIO_PA2_SSI0CLK);
     GPIOPinConfigure(GPIO_PA4_SSI0RX);
     GPIOPinConfigure(GPIO_PA5_SSI0TX);
-    
+    */
 	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_1,
-                       SSI_MODE_MASTER, 1000000, 16);
+                       SSI_MODE_MASTER, 300000, 16);
    SSIEnable(SSI0_BASE);
    
   GPIOPinTypeSSI(GPIO_PORTA_BASE,  GPIO_PIN_5 | GPIO_PIN_4 | GPIO_PIN_2);

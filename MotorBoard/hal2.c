@@ -5,6 +5,14 @@
 #include "hal2.h"
 #include "AS5048.h"
 #include "foos_spi.h"
+#include "driverlib/rom_map.h"
+
+volatile uint32_t clockF;
+
+void __error__(char *pcFilename, uint32_t ui32Line)
+{
+	_write("TEST");
+}
 
 
 
@@ -24,11 +32,11 @@ void TimerInit()
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC);
 	if( PRINT_CALIBRATE )
 	{
-		TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 10);
+		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 2);
 	}
 	else
 	{
-		TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet() / 1000);
+		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 500);
 	}
 	
 	IntMasterEnable();
@@ -49,7 +57,7 @@ void UARTInit()
 
     GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
-    UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 9600,
+    UARTConfigSetExpClk(UART0_BASE, clockF,9600,
                         (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
                          UART_CONFIG_PAR_NONE));
 	  IntEnable(INT_UART0);
@@ -57,11 +65,13 @@ void UARTInit()
 }
 
 
-
+// 9600,
 void systemInit(motor_foop* motorArray, uint8_t totalMotors)
 {
-	SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
-					 SYSCTL_XTAL_16MHZ);
+	//SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
+	//				 SYSCTL_XTAL_25MHZ);
+	clockF = MAP_SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ | SYSCTL_OSC_MAIN | SYSCTL_USE_PLL | SYSCTL_CFG_VCO_480),
+    				120000000);
 	UARTInit();
 	TimerInit();
 	motorsInit(motorArray, totalMotors);
@@ -159,7 +169,7 @@ void MOTOR_DISABLE(uint32_t num,  motor_foop * motorArray)
 void motorsInit(motor_foop* motorArray, uint8_t totalMotors)
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
-    
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
     
 	for(int i = 0; i < totalMotors; i++)
 	{

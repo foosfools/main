@@ -908,10 +908,10 @@ void OpenCVOfficialTest::TrackBall() {
 			const uint8_t bufSize = 16;
 			char outBufA[bufSize];
 			char outBufB[bufSize];
-			for(uint32_t i = 0; i < bufSize; i++)
-			{
-				outBufA[i] = '\0';
-			}
+			
+			memset(outBufA, '\0', bufSize);
+			memset(outBufB, '\0', bufSize);
+
 			this->createMotorCommand(motor_rod, 0, outBufA);
 			
 			write(uart_fd, outBufA, strlen(outBufA));
@@ -945,7 +945,7 @@ void OpenCVOfficialTest::TrackBall() {
 		clock_t endTime = clock();
 		clock_t clockTicksTaken = endTime - startTime;
 		double fps = (double) (CLOCKS_PER_SEC / clockTicksTaken);
-
+		cout << "fps: " << fps << endl;
 		waitKey(10);
 	}
 }

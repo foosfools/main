@@ -123,22 +123,20 @@ Vec2i Board::avgBallOnRod(Vec2i prediction, Rod* rod)
 
 	Vec2i result;
 	static double velArr[FRAMES_TO_AVG_FOR_VEL_NUM];
-	
-	static int index = 0;
-	
+
 	if( prediction[0] == -1 || prediction[1] == -1 )
 	{
-		index = 0;
+		rod->currentAvgBallIndex = 0;
 		result[0] = -1;
 		result[1] = -1;
 		return result;
 	}
 	
-	rod->avgBallOnRodArr[index++] = prediction;
+	rod->avgBallOnRodArr[rod->currentAvgBallIndex++] = prediction;
 	
-	if(index == FRAMES_TO_AVG_FOR_VEL_NUM)
+	if(rod->currentAvgBallIndex == FRAMES_TO_AVG_FOR_VEL_NUM)
 	{
-		index = 0;
+		rod->currentAvgBallIndex = 0;
 		
 		int sumX   = 0;
 		int sumY   = 0;
@@ -173,7 +171,7 @@ int Board::convertRodtoEncoderVal(Rod* rod)
 	int scalar = rod->maxY - rod->minY;
 	int scaledRodPos = rod->currentY - rod->minY;
 	
-	float ratio = ((float)scaledRodPos)/((float)scalar);
+	float ratio = 1.0f - ((float)scaledRodPos)/((float)scalar);
 	
 	return (int)(ratio * ((float)encoderScalar));
 }

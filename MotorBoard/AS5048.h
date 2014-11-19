@@ -9,7 +9,9 @@ typedef enum
 
 typedef enum
 {
-	error_bit = (1 << 14),
+	error_bit      = (1 << 14),
+	evenParity_bit = (1 << 15),
+	oddParity_bit  = 0,
 } bitfields;
 
 typedef enum
