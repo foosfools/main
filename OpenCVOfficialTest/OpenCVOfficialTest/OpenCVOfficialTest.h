@@ -54,6 +54,7 @@ public:
 	void InitWithOutBall();
 	//tracks ball
 	void TrackBall();
+	void TrackRod(uint32_t rodNum, double lastXVel);
 	//performs color tracking
 	void IdentifyBall();
 	//nCircles keeps track of how many circles have been counted

@@ -28,8 +28,8 @@ static uint8_t bufIndex = 0;
 
 static volatile motor_foop motor_info[] = 
 {	
-	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_5, .step_port=GPIO_PORTC_BASE, .dir_pin=GPIO_PIN_6, .dir_port=GPIO_PORTC_BASE, .sleep_pin=GPIO_PIN_4, .sleep_port=GPIO_PORTC_BASE, .stepPin_state = GPIO_PIN_5, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2, .encoderVal = 0, .endPos =  0x10FA, .midPoint = 0x10FA, .isKickMotor = false, .directionBit = true},
-	{.toggleGPIO_en = false, .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTA_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5, .encoderVal = 0, .endPos = 0x3EE1, .midPoint = 0x3EE1, .isKickMotor = true, .directionBit = true} 
+	{ .step_pin = GPIO_PIN_5, .step_port=GPIO_PORTC_BASE, .dir_pin=GPIO_PIN_6, .dir_port=GPIO_PORTC_BASE, .sleep_pin=GPIO_PIN_4, .sleep_port=GPIO_PORTC_BASE, .stepPin_state = GPIO_PIN_5, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_2, .midPoint = 0x2A5A, .isKickMotor = false, .directionBit = true},
+	{ .step_pin = GPIO_PIN_7, .step_port=GPIO_PORTA_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTB_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTB_BASE, .stepPin_state = GPIO_PIN_7, .slaveSel_port=GPIO_PORTB_BASE, .slaveSel_pin=GPIO_PIN_5, .midPoint = 0xD54, .isKickMotor = true,  .directionBit = true} 
 };																																																																							// .endPos = 0x07FE, .midPoint = 0x07FE		
 
 
@@ -64,9 +64,53 @@ void TIMER0A_Handler(void)
 	uint32_t i; 
 	static bool readEncoder = true;
 	
+	bool toggleI = false;
+	
 	for(i = 0; i < TOTAL_MOTORS; i++)
 	{
-		if(motor_info[i].toggleGPIO_en)
+		switch( motor_info[i].state )
+		{
+			case motorState_stopped: 
+				break;
+				
+			case motorState_fullSpeed:
+				toggleI = true;
+				break;
+				
+			case motorState_accel:
+				motor_info[i].stepWidth_counter++;
+				if( motor_info[i].stepWidth_counter >=  motor_info[i].stepWidth )
+				{
+					toggleI = true;
+					motor_info[i].stepWidth--;
+					motor_info[i].stepWidth_counter = 0;
+					
+					if( motor_info[i].stepWidth <= minStepWidth )
+					{
+						 motor_info[i].state = motorState_fullSpeed;
+					}
+				}
+				break;
+			
+			case motorState_decel:
+				motor_info[i].stepWidth_counter++;
+				if( motor_info[i].stepWidth_counter >=  motor_info[i].stepWidth )
+				{
+					toggleI = true;
+					motor_info[i].stepWidth_counter = 0;
+					
+					if( motor_info[i].stepWidth < maxStepWidth )
+					{
+						motor_info[i].stepWidth++;
+					}
+				}
+				break;
+			
+			default:
+				break;
+		}
+
+		if( toggleI )
 		{
 			CRITICAL_START();
 			{
@@ -94,37 +138,51 @@ static void updateMotorVals()
 {
 	enum
 	{
-		maxMotorSteps = 200,
-		threshold     = 100,
+		maxMotorSteps  = 200,
+		stopThreshold  = 100,
+		decelThreshold = 1000,
 	};
 	
-	CRITICAL_START();
+	int32_t difference = 0;
+	
+	for(uint32_t i = 0; i < TOTAL_MOTORS; i++)
 	{
-		volatile int32_t difference = 0;
-		
-		for(uint32_t i = 0; i < TOTAL_MOTORS; i++)
+		difference = distBetweenValues(motor_info[i].offset, 
+										(uint32_t)motor_info[i].endPos, 
+										(uint32_t)motor_info[i].encoderVal);
+										
+		if( difference > stopThreshold || difference < -stopThreshold )
 		{
-			//difference = ((int32_t)motor_info[i].endPos - (int32_t)motor_info[i].encoderVal);
-			difference = distBetweenValues(motor_info[i].offset, (uint32_t)motor_info[i].endPos, (uint32_t)motor_info[i].encoderVal);
-			if( difference > threshold || difference < -threshold )
+			if( difference > -decelThreshold && difference < decelThreshold )
 			{
-				MOTOR_ENABLE(i, motor_info, (difference < 0) ? false : true);
+				CRITICAL_START();
+					setMotorState(motorState_decel, &motor_info[i]);
+				CRITICAL_END();
+			}
+			else if( motor_info[i].state == motorState_stopped )
+			{
+				CRITICAL_START();
+					setMotorState(motorState_accel, &motor_info[i]);
+				CRITICAL_END();
+			}
+			
+			MOTOR_ENABLE(i, motor_info, (difference < 0) ? false : true);
+		}
+		else
+		{
+			if( motor_info[i].isKickMotor &&  (motor_info[i].endPos != motor_info[i].midPoint) )
+			{
+				CRITICAL_START();
+					motor_info[i].endPos = motor_info[i].midPoint;
+			//	setMotorState(motorState_stopped, &motor_info[i]);
+				CRITICAL_END();
 			}
 			else
 			{
-			
-				if( motor_info[i].isKickMotor &&  (motor_info[i].endPos != motor_info[i].midPoint) )
-				{
-					motor_info[i].endPos = motor_info[i].midPoint;
-				}
-				else
-				{
-					MOTOR_DISABLE(i, motor_info);
-				}
+				MOTOR_DISABLE(i, motor_info);
 			}
 		}
- 	}
- 	CRITICAL_END();
+	}
 }
 
 
@@ -134,7 +192,7 @@ static void readEncoders()
 	{
 		motor_info[i].encoderVal = AS5048_readAngle(motor_info[i].slaveSel_port, motor_info[i].slaveSel_pin);
 		
-		if( PRINT_CALIBRATE && i == 0 )
+		if( PRINT_CALIBRATE )//&& i == 0 )
 		{
 			printHex16(motor_info[i].encoderVal);
 		}
@@ -157,13 +215,13 @@ static void handleWriteToScreenEvent()
 			
 			if(parsemotorData(buf, &motorNum, &direction, &endPos))
 			{
-				if( endPos > 15500 ) //makes sure that endpos is in reachable range, otherwise it would keep hitting the edge of the table
+				if( endPos > 15000 ) //makes sure that endpos is in reachable range, otherwise it would keep hitting the edge of the table
 				{
 					endPos = 15500;
 				}
-				else if( endPos < 900 )
+				else if( endPos <1000 )
 				{
-					endPos = 900;
+					endPos = 1000;
 				} 
 				
 				motor_info[motorNum].endPos = (endPos + motor_info[motorNum].offset) & maxEncoderVal;
@@ -180,12 +238,7 @@ static void handleWriteToScreenEvent()
 
 
 int main(void)
-{
-    volatile uint32_t ui32Loop;
-    
-  //  MAP_SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ | SYSCTL_OSC_MAIN | SYSCTL_USE_PLL | SYSCTL_CFG_VCO_480),
-    //				120000000);
-    
+{   
 	systemInit(motor_info, TOTAL_MOTORS);
 	
 	for(;;)

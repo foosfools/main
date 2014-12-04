@@ -22,15 +22,11 @@
 #include "driverlib/interrupt.h"
 #include "driverlib/timer.h"
 
-#define PRINT_CALIBRATE (0)
 
-//step size config
-#define M0_PIN GPIO_PIN_7
-#define M1_PIN GPIO_PIN_1
-#define M2_PIN GPIO_PIN_3
-#define M0_PORT GPIO_PORTA_BASE
-#define M1_PORT GPIO_PORTF_BASE
-#define M2_PORT GPIO_PORTE_BASE
+
+#define PRINT_CALIBRATE (1)
+
+
 
 static volatile uint32_t criticalRegionCount = 0;
 
@@ -70,10 +66,26 @@ typedef enum
 
 
 
+typedef enum
+{
+	motorState_accel,
+	motorState_decel,
+	motorState_stopped,
+	motorState_fullSpeed,
+} motorState;
+
+
+
+enum
+{
+	maxStepWidth = 6,
+	minStepWidth = 1,
+};
+
+
+
 typedef struct
 {
-	bool toggleGPIO_en; 
-	
 	uint32_t step_pin;
 	uint32_t step_port;
 	
@@ -100,6 +112,10 @@ typedef struct
 	
 	bool directionBit;
 	
+	motorState state;
+	
+	uint32_t stepWidth; //used for accel and decel
+	uint32_t stepWidth_counter;
 } motor_foop;
 
 
@@ -112,10 +128,6 @@ void systemInit(motor_foop* motorArray, uint8_t totalMotors);
 
 void motorsInit(motor_foop* motorArray, uint8_t totalMotors);
 
-void stepSizePinsInit(void);
-
-void stepSizeSet(stepSize size);
-
 void TimerInit(void);
 
 void motorSleepDirPinsInit(motor_foop* motorArray, uint8_t totalMotors);
@@ -126,11 +138,24 @@ void MOTOR_DISABLE(uint32_t num, motor_foop * motorArray);
 
 int32_t stringToInt(char* c);
 
+inline void setMotorState(motorState state, motor_foop* motor)
+{
+	(*motor).state = state; 
+		
+	if( state == motorState_accel )
+	{
+		(*motor).stepWidth = maxStepWidth; 
+	}
+	else if( state == motorState_decel )
+	{
+		(*motor).stepWidth = minStepWidth; 
+	}
+	(*motor).stepWidth_counter = 0;
+}
+
 //only input is char*c. the rest are outputs. returns true on success
 bool parsemotorData(char* c, uint8_t* motorNum, bool* direction, uint32_t* time_ms);
 //EOF
-
-inline void endian16_swap(uint16_t* n);
 
 void printHex16(uint16_t val);
 

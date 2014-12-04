@@ -7,6 +7,8 @@
 #include "foos_spi.h"
 #include "driverlib/rom_map.h"
 
+extern inline void setMotorState(motorState state, motor_foop* motor);
+
 volatile uint32_t clockF;
 
 void __error__(char *pcFilename, uint32_t ui32Line)
@@ -36,7 +38,7 @@ void TimerInit()
 	}
 	else
 	{
-		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 500);
+		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 1000);
 	}
 	
 	IntMasterEnable();
@@ -80,65 +82,6 @@ void systemInit(motor_foop* motorArray, uint8_t totalMotors)
 
 
 
-void stepSizePinsInit(void)
-{
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
-	GPIOPinTypeGPIOOutput(M0_PORT, M0_PIN);
-	GPIOPinTypeGPIOOutput(M1_PORT, M1_PIN);
-	GPIOPinTypeGPIOOutput(M2_PORT, M2_PIN);
-}
-
-
-
-void stepSizeSet(stepSize size)
-{
-	switch(size)
-	{
-		case full:
-			GPIOPinWrite(M0_PORT, M0_PIN, ~M0_PIN);
-			GPIOPinWrite(M1_PORT, M1_PIN, ~M1_PIN);
-			GPIOPinWrite(M2_PORT, M2_PIN, ~M2_PIN);
-			break;
-		
-		case half:
-			GPIOPinWrite(M0_PORT, M0_PIN, M0_PIN);
-			GPIOPinWrite(M1_PORT, M1_PIN, ~M1_PIN);
-			GPIOPinWrite(M2_PORT, M2_PIN, ~M2_PIN);
-			break;
-		
-		case quarter:
-			GPIOPinWrite(M0_PORT, M0_PIN, ~M0_PIN);
-			GPIOPinWrite(M1_PORT, M1_PIN, M1_PIN);
-			GPIOPinWrite(M2_PORT, M2_PIN, ~M2_PIN);
-			break;
-		
-		case eighth:
-			GPIOPinWrite(M0_PORT, M0_PIN, M0_PIN);
-			GPIOPinWrite(M1_PORT, M1_PIN, M1_PIN);
-			GPIOPinWrite(M2_PORT, M2_PIN, ~M2_PIN);
-			break;
-		
-		case sixteenth:
-			GPIOPinWrite(M0_PORT, M0_PIN, ~M0_PIN);
-			GPIOPinWrite(M1_PORT, M1_PIN, ~M1_PIN);
-			GPIOPinWrite(M2_PORT, M2_PIN, M2_PIN);
-			break;
-		
-		case thirtySecond:
-			GPIOPinWrite(M0_PORT, M0_PIN, M0_PIN);
-			GPIOPinWrite(M1_PORT, M1_PIN, M1_PIN);
-			GPIOPinWrite(M2_PORT, M2_PIN, M2_PIN);
-			break;
-			
-		default:
-			break;
-	}
-}
-
-
-
 void MOTOR_ENABLE(uint32_t num, motor_foop * motorArray, bool direction)												    
 {
 	CRITICAL_START()	
@@ -147,7 +90,6 @@ void MOTOR_ENABLE(uint32_t num, motor_foop * motorArray, bool direction)
 					motorArray[num].dir_pin, 
 					(direction == motorArray[num].directionBit) ? ~motorArray[num].dir_pin : motorArray[num].dir_pin);
 		GPIOPinWrite(motorArray[num].sleep_port, motorArray[num].sleep_pin, motorArray[num].sleep_pin);
-		motorArray[num].toggleGPIO_en = true;  	
 	}	
 	CRITICAL_END()							
 }
@@ -158,7 +100,8 @@ void MOTOR_DISABLE(uint32_t num,  motor_foop * motorArray)
 {		
 	CRITICAL_START()	
 	{																		
-		motorArray[num].toggleGPIO_en = false;   												
+		motorArray[num].state             = motorState_stopped;   
+		motorArray[num].stepWidth_counter = 0;											
 		GPIOPinWrite(motorArray[num].sleep_port, motorArray[num].sleep_pin, ~(motorArray[num].sleep_pin));	
 	}	
 	CRITICAL_END()			     			
@@ -173,6 +116,12 @@ void motorsInit(motor_foop* motorArray, uint8_t totalMotors)
     
 	for(int i = 0; i < totalMotors; i++)
 	{
+		motorArray[i].stepWidth_counter = 0;
+		motorArray[i].stepWidth         = maxStepWidth;
+		motorArray[i].state             = motorState_stopped;
+		motorArray[i].encoderVal        = 0;
+		motorArray[i].endPos            = motorArray[i].midPoint;
+	
 		GPIOPinTypeGPIOOutput(motorArray[i].dir_port, motorArray[i].dir_pin);
 		GPIOPinWrite(motorArray[i].dir_port, motorArray[i].dir_pin, motorArray[i].dir_pin);
 		

@@ -1,12 +1,13 @@
 #include "Board.h"
 #include "math.h"
-
+#include <cassert>
 
 Rod::Rod(int32_t xPos, int32_t minY, int32_t maxY, uint8_t numPlayers, uint8_t transMotor_num, uint8_t kickMotor_num) 
 : xPos(xPos), minY(minY), maxY(maxY), numPlayers(numPlayers), transMotor_num(transMotor_num), kickMotor_num(kickMotor_num)
 {
 	this->currentY = (minY + maxY) / 2;
 	currentAvgBallIndex = 0;
+	rodSpacing_px = tableWidth -  (maxY - minY) - 2 * bushingOffset;
 }
 
 
@@ -27,7 +28,20 @@ Board::Board(int currentX, int currentY)
 	lastGoaliePos[0] = 0;
 	lastGoaliePos[1] = 0;
 	ballVelAvgArr_index = 0;
-	rods[0] = new Rod(53, 102, 179, 1, 0, 0);
+	rods[0] = new Rod(53, 
+					102, 
+					179, 
+					1, 
+					0, 
+					1);
+					
+	rods[1] = new Rod(83, 
+					43, 
+					232, 
+					2, 
+					2, 
+					3);
+//int32_t xPos, int32_t minY, int32_t maxY, uint8_t numPlayers, uint8_t transMotor_num, uint8_t kickMotor_num
 }
 
 
@@ -203,5 +217,44 @@ double Board::updateBallVelocityAverage(double lastVelX)
 		return 0.0;
 	}
 }
+
+
+
+int getMinPlayerOffsetForRod(Rod* rod, int ballOnRodPos)
+{
+	static const float epsilon = 0.00000001;
+	
+	//add rodSpacing
+	int rodDist_px = rod->maxY - rod->minY;
+	
+	float leftRodEnd_px = rod->currentY - ((float)rod->rodSpacing_px) / 2;
+	float unNormalizedN = (((float)ballOnRodPos -  (float)leftRodEnd_px) / (float)rod->rodSpacing_px) 
+							* (float)(rod->numPlayers - 1);
+							
+	int normalizedN = (int)(unNormalizedN + 0.5 + epsilon);
+	int lowerRound  = (int)(unNormalizedN + epsilon);
+	int higherRound = lowerRound + 1;
+	
+	assert(normalizedN == lowerRound || normalizedN == higherRound);
+	
+	float nThPlayerPos = leftRodEnd_px + (((float)normalizedN) / (float)(rod->numPlayers - 1))
+										* rod->rodSpacing_px;
+	
+	int offset = ballOnRodPos - nThPlayerPos;
+	
+	//check that offset is not out of range
+	if( offset + rod->currentY + rodDist_px / 2 > rod->maxY ||  offset + rod->currentY - rodDist_px / 2 < rod->maxY )
+	{
+		normalizedN = (normalizedN == lowerRound) ? higherRound : lowerRound;
+		
+		nThPlayerPos = leftRodEnd_px + (((float)normalizedN) / (float)(rod->numPlayers - 1))
+										* rod->rodSpacing_px;
+		offset = ballOnRodPos - nThPlayerPos;
+	}
+
+	return offset;
+}
+
+
 
 //EOF

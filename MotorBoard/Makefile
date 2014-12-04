@@ -53,7 +53,11 @@ CFLAGS=-mthumb               \
 
 
 
+#      -Werror                \
 #-DTARGET_IS_TM4C123_RB1
+
+dump:
+	${PREFIX}-objdump -d testProgram.o > testProgram.s
 
 readElf:
 	${PREFIX}-readelf -a ${PROGRAM_NAME}.o
@@ -73,7 +77,7 @@ build:
 flash:
 	./lm4flash ${PROGRAM_NAME}.bin
 	
-release: CFLAGS+=-g -O0
+release: CFLAGS+=-g -O1
 release: build
 
 debug: CFLAGS+=-g -D DEBUG -O0

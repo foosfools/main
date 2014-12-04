@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include "hal2.h"
+#include "driverlib/ssi.h"
 
 //slave selects need to be enabled separately
 void spi_init(motor_foop* motorArray, uint32_t totalMotors);
