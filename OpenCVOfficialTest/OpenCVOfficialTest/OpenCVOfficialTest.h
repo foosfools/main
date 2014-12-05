@@ -86,6 +86,9 @@ public:
 	KalmanFilter KF;
 	void kalmanFilterInit();
 	Point getKalmanPoint(Point measuredPoint);
+	
+	//static functions
+	static void createMotorCommand(int motorPulse, int motorNum, char* outBuf);
 
 private:
 	Vec2f getGoodLine(vector<Vec2f> lines, int &nLines);
@@ -114,7 +117,6 @@ private:
 	Point averageOutBalls();
 	void calcGoalPosition(Vec2f line, Vec3f circle);
 	void findColoredObjects2(Mat &grayImg, int &x1, int &y1, int &x2, int &y2);
-	void createMotorCommand(int motorPulse, int motorNum, char* outBuf);
 };
 #endif
 

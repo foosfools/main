@@ -896,7 +896,7 @@ void OpenCVOfficialTest::TrackRod(uint32_t rodNum, double lastXVel)
 		memset(outBufA, '\0', bufSize);
 		memset(outBufB, '\0', bufSize);
 
-		this->createMotorCommand(motor_rod, board.rods[rodNum]->transMotor_num, outBufA);
+		OpenCVOfficialTest::createMotorCommand(motor_rod, board.rods[rodNum]->transMotor_num, outBufA);
 		
 		write(uart_fd, outBufA, strlen(outBufA));
 
@@ -904,7 +904,7 @@ void OpenCVOfficialTest::TrackRod(uint32_t rodNum, double lastXVel)
 		
 		if(goalieBallArrivalTime_s < 0 && goalieBallArrivalTime_s >= -0.2)
 		{
-			this->createMotorCommand((0x3FFF / 2) - 1200, board.rods[rodNum]->kickMotor_num, outBufB);
+			OpenCVOfficialTest::createMotorCommand((0x3FFF / 2) - 1200, board.rods[rodNum]->kickMotor_num, outBufB);
 			write(uart_fd, outBufB, strlen(outBufB));
 		}
 		
@@ -970,7 +970,6 @@ void OpenCVOfficialTest::createMotorCommand(int motorPulse, int motorNum, char* 
 	
 	int index = 0;
 
-	
 	outBuf[index++] = motorNum + '0';
 	outBuf[index++] = ':';
 	
