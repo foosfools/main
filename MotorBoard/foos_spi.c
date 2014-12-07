@@ -21,8 +21,8 @@ void spi_init(motor_foop* motorArray, uint32_t totalMotors)
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 	
 	GPIOPinConfigure(GPIO_PA2_SSI0CLK);
-    GPIOPinConfigure(GPIO_PA4_SSI0XDAT0);
-    GPIOPinConfigure(GPIO_PA5_SSI0XDAT1);
+    GPIOPinConfigure(GPIO_PA4_SSI0XDAT0); //MOSI
+    GPIOPinConfigure(GPIO_PA5_SSI0XDAT1); //MISO
 
 	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_1,
                        SSI_MODE_MASTER, spiFreq, 16);

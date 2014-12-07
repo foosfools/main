@@ -24,7 +24,7 @@
 
 
 
-#define PRINT_CALIBRATE (1)
+#define PRINT_CALIBRATE (0)
 
 
 
@@ -78,7 +78,7 @@ typedef enum
 
 enum
 {
-	maxStepWidth = 6,
+	maxStepWidth = 3,
 	minStepWidth = 1,
 };
 

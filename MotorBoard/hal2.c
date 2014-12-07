@@ -34,11 +34,11 @@ void TimerInit()
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC);
 	if( PRINT_CALIBRATE )
 	{
-		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 2);
+		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 10);
 	}
 	else
 	{
-		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 1000);
+		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 300);
 	}
 	
 	IntMasterEnable();
@@ -112,8 +112,13 @@ void MOTOR_DISABLE(uint32_t num,  motor_foop * motorArray)
 void motorsInit(motor_foop* motorArray, uint8_t totalMotors)
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
-    
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOK);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOQ);
+	
 	for(int i = 0; i < totalMotors; i++)
 	{
 		motorArray[i].stepWidth_counter = 0;
@@ -121,7 +126,8 @@ void motorsInit(motor_foop* motorArray, uint8_t totalMotors)
 		motorArray[i].state             = motorState_stopped;
 		motorArray[i].encoderVal        = 0;
 		motorArray[i].endPos            = motorArray[i].midPoint;
-	
+		motorArray[i].stepPin_state = motorArray[i].step_pin;
+		
 		GPIOPinTypeGPIOOutput(motorArray[i].dir_port, motorArray[i].dir_pin);
 		GPIOPinWrite(motorArray[i].dir_port, motorArray[i].dir_pin, motorArray[i].dir_pin);
 		

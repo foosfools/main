@@ -68,12 +68,20 @@ clean:
 echo-lib:
 	echo ${LIBC}
 
+scratchFile:
+	${CC} ${CFLAGS} scratchFile.c
+	${LD} scratchFile.o ${TIVA_LIB_DIR}/libdriver.a -T ${LINKER_FILE} ${LD_FLAGS} -o scratchTest.o
+	${PREFIX}-objcopy -O binary scratchTest.o scratchTest.bin
+
 build:
 	${CC} ${CFLAGS} ${C_SOURCE_FILES}
 	${LD} ${OBJECT_FILES} ${TIVA_LIB_DIR}/libdriver.a -T ${LINKER_FILE} ${LD_FLAGS} -o ${PROGRAM_NAME}.o
 	${PREFIX}-objcopy -O binary ${PROGRAM_NAME}.o ${PROGRAM_NAME}.bin
 	${PREFIX}-size ${PROGRAM_NAME}.o
-	
+
+flashScratch:
+	./lm4flash scratchTest.bin
+
 flash:
 	./lm4flash ${PROGRAM_NAME}.bin
 	
@@ -85,12 +93,18 @@ debug: build
 
 all: clean release
 
+gdb-scratch:
+	${PREFIX}-gdb scratchFile.o
+
 gdb-run:
 	${PREFIX}-gdb ${PROGRAM_NAME}.o
 	
 gdb-openocd:
 	openocd -f /usr/local/share/openocd/scripts/board/ek-tm4c123gxl.cfg
-	
+	##include "inc/tm4c1294ncpdt.h"
 open:
 	#screen /dev/tty.usbmodem0E20ACC1 9600
 	screen /dev/tty.usbmodem0F0029C1 9600
+	
+open2:
+	screen /dev/tty.usbmodem0F002E61 9600

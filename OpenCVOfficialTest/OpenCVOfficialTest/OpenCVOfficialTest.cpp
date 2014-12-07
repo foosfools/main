@@ -963,6 +963,7 @@ void OpenCVOfficialTest::TrackBall() {
 }
 
 
+
 //"1:1000"
 void OpenCVOfficialTest::createMotorCommand(int motorPulse, int motorNum, char* outBuf)
 {
