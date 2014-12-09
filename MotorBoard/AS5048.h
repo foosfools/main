@@ -24,7 +24,6 @@ typedef enum
 #define AS5048_H
 
 #include <stdint.h>
-#include "hal2.h"
 
 void AS5048_init(motor_foop* motorArray, uint8_t totalMotors);
 uint16_t gitParityBit(uint16_t data);

@@ -7,6 +7,9 @@
 
 #pragma GCC optimize ("unroll-loops")
 
+//in retarget.c
+extern int _write(int file, char* ptr, int len);
+
 typedef enum
 {
 	readEncoder_event,
@@ -30,8 +33,10 @@ static uint8_t bufIndex = 0;
 
 static volatile motor_foop motor_info[] = 
 {	
-	{ .step_pin = GPIO_PIN_3, .step_port=GPIO_PORTF_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTM_BASE, .sleep_pin=GPIO_PIN_5, .sleep_port=GPIO_PORTM_BASE, .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_6, .midPoint = 0x250E, .isKickMotor = false, .directionBit = true},
-	{ .step_pin = GPIO_PIN_4, .step_port=GPIO_PORTK_BASE, .dir_pin=GPIO_PIN_3, .dir_port=GPIO_PORTN_BASE, .sleep_pin=GPIO_PIN_4, .sleep_port=GPIO_PORTQ_BASE, .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_4, .midPoint = 0xCF9, .isKickMotor = true,  .directionBit = true} 
+	{ .step_pin = GPIO_PIN_3, .step_port=GPIO_PORTF_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTM_BASE, .sleep_pin=GPIO_PIN_5, .sleep_port=GPIO_PORTM_BASE, .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_6, .midPoint = 0x2E54, .isKickMotor = false, .directionBit = true, .spi = spi0}, //motor0
+	{ .step_pin = GPIO_PIN_4, .step_port=GPIO_PORTK_BASE, .dir_pin=GPIO_PIN_3, .dir_port=GPIO_PORTN_BASE, .sleep_pin=GPIO_PIN_4, .sleep_port=GPIO_PORTQ_BASE, .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_4, .midPoint = 0xCF9,  .isKickMotor = true,  .directionBit = true, .spi = spi0}  //motor1
+//	{ .step_pin = GPIO_PIN_2, .step_port=GPIO_PORTF_BASE, .dir_pin=GPIO_PIN_6, .dir_port=GPIO_PORTM_BASE, .sleep_pin=GPIO_PIN_7, .sleep_port=GPIO_PORTM_BASE, .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_5, .midPoint = 0x250E, .isKickMotor = false, .directionBit = true, .spi = spi1}, //motor2
+//	{ .step_pin = GPIO_PIN_5, .step_port=GPIO_PORTK_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTN_BASE, .sleep_pin=GPIO_PIN_2, .sleep_port=GPIO_PORTN_BASE, .slaveSel_port=GPIO_PORTK_BASE, .slaveSel_pin=GPIO_PIN_3, .midPoint = 0xCF9, .isKickMotor = true,  .directionBit = true, .spi = spi1}   //motor3
 };																																																																							// .endPos = 0x07FE, .midPoint = 0x07FE		
 
 
@@ -140,7 +145,7 @@ void TIMER0A_Handler(void)
 
 
 
-static void updateMotorVals()
+static void updateMotorVals(void)
 {
 	enum
 	{
@@ -201,15 +206,16 @@ static void updateMotorVals()
 }
 
 
-static void readEncoders()
+
+static void readEncoders(void)
 {
 		for(uint32_t i = 0; i < TOTAL_MOTORS; i++)
 		{
 			CRITICAL_START();
-				motor_info[i].encoderVal = AS5048_readAngle(motor_info[i].slaveSel_port, motor_info[i].slaveSel_pin);
+				motor_info[i].encoderVal = AS5048_readAngle(motor_info[i].spi, motor_info[i].slaveSel_port, motor_info[i].slaveSel_pin);
 			CRITICAL_END();
 			
-			if( PRINT_CALIBRATE )//&& i == 0 )
+			if( PRINT_CALIBRATE && i < 2 )
 			{
 				printHex16(motor_info[i].encoderVal);
 			}
@@ -219,7 +225,8 @@ static void readEncoders()
 }
 
 
-static void handleWriteToScreenEvent()
+
+static void handleWriteToScreenEvent(void)
 {
 		char c = '\n';
 			_write(0, buf, bufIndex + 1);

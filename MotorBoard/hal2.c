@@ -4,16 +4,18 @@
 
 #include "hal2.h"
 #include "AS5048.h"
-#include "foos_spi.h"
 #include "driverlib/rom_map.h"
 
-extern inline void setMotorState(motorState state, motor_foop* motor);
+//in hal2.h
+extern inline void setMotorState(motorState state,volatile motor_foop* motor);
+//in retarget.c
+extern int _write(int file, char* ptr, int len);
 
 volatile uint32_t clockF;
 
 void __error__(char *pcFilename, uint32_t ui32Line)
 {
-	_write("TEST");
+	//_write("TEST");
 }
 
 
@@ -34,7 +36,7 @@ void TimerInit()
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC);
 	if( PRINT_CALIBRATE )
 	{
-		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 10);
+		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 2);
 	}
 	else
 	{
@@ -68,7 +70,7 @@ void UARTInit()
 
 
 // 9600,
-void systemInit(motor_foop* motorArray, uint8_t totalMotors)
+void systemInit(volatile motor_foop* motorArray, uint8_t totalMotors)
 {
 	//SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
 	//				 SYSCTL_XTAL_25MHZ);

@@ -10,36 +10,62 @@
 #include "foos_spi.h"
 
 
-void spi_init(motor_foop* motorArray, uint32_t totalMotors)
+void spiPort_init(spi_num spi)
 {
 	enum
 	{
 		spiFreq = 300000,
 	};
 	
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+	uint32_t spi_base = 0;
 	
-	GPIOPinConfigure(GPIO_PA2_SSI0CLK);
-    GPIOPinConfigure(GPIO_PA4_SSI0XDAT0); //MOSI
-    GPIOPinConfigure(GPIO_PA5_SSI0XDAT1); //MISO
+	switch( spi )
+	{
+		case spi0:
+			spi_base = SSI0_BASE;
+			SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
+			SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+	
+			GPIOPinConfigure(GPIO_PA2_SSI0CLK);
+			GPIOPinConfigure(GPIO_PA4_SSI0XDAT0); //MOSI
+			GPIOPinConfigure(GPIO_PA5_SSI0XDAT1); //MISO
 
-	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_1,
-                       SSI_MODE_MASTER, spiFreq, 16);
-   SSIEnable(SSI0_BASE);
+			SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_1,
+							   SSI_MODE_MASTER, spiFreq, 16);
+			SSIEnable(SSI0_BASE);
    
-  GPIOPinTypeSSI(GPIO_PORTA_BASE,  GPIO_PIN_5 | GPIO_PIN_4 | GPIO_PIN_2);
+			GPIOPinTypeSSI(GPIO_PORTA_BASE,  GPIO_PIN_5 | GPIO_PIN_4 | GPIO_PIN_2);
+			break;
+			
+		case spi1:
+		    spi_base = SSI1_BASE;
+			SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI1);
+			SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+			SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+	
+			GPIOPinConfigure(GPIO_PB5_SSI1CLK);
+			GPIOPinConfigure(GPIO_PE4_SSI1XDAT0); //MOSI
+			GPIOPinConfigure(GPIO_PE5_SSI1XDAT1); //MISO
+
+			SSIConfigSetExpClk(SSI1_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_1,
+							   SSI_MODE_MASTER, spiFreq, 16);
+			SSIEnable(SSI1_BASE);
    
-   //tx, rx, clk
-   for(uint32_t i = 0; i < totalMotors; i++)
-   {
-	 GPIOPinTypeGPIOOutput(motorArray[i].slaveSel_port, motorArray[i].slaveSel_pin);
+			GPIOPinTypeSSI(GPIO_PORTE_BASE,  GPIO_PIN_4 | GPIO_PIN_5);
+			GPIOPinTypeSSI(GPIO_PORTB_BASE,  GPIO_PIN_5);
+			break;
    }
    
-
    uint32_t dummyBuf;
-	while(SSIDataGetNonBlocking(SSI0_BASE, &dummyBuf)) // clears FIFOs
+	while(SSIDataGetNonBlocking(spi_base, &dummyBuf)) // clears FIFOs
 		continue;
+}
+
+
+
+void spiGPIO_init(uint32_t port, uint32_t pin)
+{
+	 GPIOPinTypeGPIOOutput(port, pin);
 }
 
 
@@ -63,18 +89,30 @@ void spi_close(uint32_t port, uint32_t pin)
 //buf - the data to be written
 //size- the number of 16 bit values to send
 //assumes spi has been opened
-void spi_write16(uint16_t* buf, size_t size)
+void spi_write16(spi_num spi, uint16_t* buf, size_t size)
 {
 	uint32_t temp = 0;
+	uint32_t spi_base = 0;
+	
+	switch( spi )
+	{
+		case spi0:
+			spi_base = SSI0_BASE;
+			break;
+			
+		case spi1:
+			spi_base = SSI1_BASE;
+			break;
+	}
 	
 	for(uint32_t i = 0; i < size; i++)
 	{
 		temp = (uint32_t)buf[i];
-        SSIDataPut(SSI0_BASE, temp);
+        SSIDataPut(spi_base, temp);
 	}
 	
 	
-	while(SSIBusy(SSI0_BASE))
+	while(SSIBusy(spi_base))
 		continue;
 }
 

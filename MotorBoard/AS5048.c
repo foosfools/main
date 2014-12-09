@@ -6,9 +6,18 @@
 #include "hal2.h"
 #include "foos_spi.h" 
 
+//in retarget.c
+extern int _write(int file, char* ptr, int len);
+
 void AS5048_init(motor_foop* motorArray, uint8_t totalMotors)
 {
-	spi_init(motorArray, totalMotors);
+	spiPort_init(spi0);
+	spiPort_init(spi1);
+	
+	for(uint32_t i = 0; i < totalMotors; i++)
+	{
+		spiGPIO_init(motorArray[i].slaveSel_port, motorArray[i].slaveSel_pin);
+	}
 }
 
 uint16_t gitParityBit(uint16_t data)
@@ -28,7 +37,7 @@ uint16_t gitParityBit(uint16_t data)
 
 
 
-static uint16_t read_AS5048 (uint32_t port, uint32_t pin, address_t address)
+static uint16_t read_AS5048 (spi_num spi, uint32_t port, uint32_t pin, address_t address)
 {
 	uint16_t buf = address | read_command;
 	
@@ -46,7 +55,7 @@ static uint16_t read_AS5048 (uint32_t port, uint32_t pin, address_t address)
 	}
 	
 	spi_open(port, pin); 
-	spi_write16(&buf, 1); 
+	spi_write16(spi, &buf, 1); 
 	spi_close(port, pin); 
 	
 	for(volatile int i = 0; i<20; i++) //busy loop
@@ -56,7 +65,7 @@ static uint16_t read_AS5048 (uint32_t port, uint32_t pin, address_t address)
 	
 	uint32_t result = 0; 
 	spi_open(port, pin); 
-	spi_write16(&buf, 1); 
+	spi_write16(spi, &buf, 1); 
 	//	spi_read((uint8_t*)&result, 2); 
 	while(SSIDataGetNonBlocking(SSI0_BASE, &result))
 		continue;
@@ -75,25 +84,25 @@ static uint16_t read_AS5048 (uint32_t port, uint32_t pin, address_t address)
 
 
 
-uint16_t AS5048_readMagnitude(uint32_t port, uint32_t pin)
+uint16_t AS5048_readMagnitude(spi_num spi, uint32_t port, uint32_t pin)
 {
-	return read_AS5048(port, pin, magnitudeReg_address);// & 0x3FFF;
+	return read_AS5048(spi, port, pin, magnitudeReg_address);// & 0x3FFF;
 }
 
 
 
-uint16_t AS5048_readAngle(uint32_t port, uint32_t pin)
+uint16_t AS5048_readAngle(spi_num spi, uint32_t port, uint32_t pin)
 {
-	return read_AS5048(port, pin, angleReg_address);// & 0x3FFF;
+	return read_AS5048(spi, port, pin, angleReg_address);// & 0x3FFF;
 }
 
-void errorFlag_clearrr(uint32_t port, uint32_t pin)
+void errorFlag_clearrr(spi_num spi, uint32_t port, uint32_t pin)
 {
 	uint16_t buf = 0x0001 | read_command;
 	
 	buf |= evenParity_bit; 
 	spi_open(port, pin); 
-	spi_write16(&buf, 1); 
+	spi_write16(spi, &buf, 1); 
 	spi_close(port, pin); 
 	
 	for(volatile int i = 0; i<20; i++) //busy loop
@@ -103,7 +112,7 @@ void errorFlag_clearrr(uint32_t port, uint32_t pin)
 	//buf = 0;
 	spi_open(port, pin); 
 	//spi_read(&buf, 1); 
-	spi_write16(&buf, 1); 
+	spi_write16(spi, &buf, 1); 
 	
 	uint32_t dummyBuf = 0;
 	while(SSIDataGetNonBlocking(SSI0_BASE, &dummyBuf)) // clears FIFOs

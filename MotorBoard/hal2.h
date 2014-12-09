@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include "driverlib/rom_map.h"
 #include "inc/hw_memmap.h"
 #include "driverlib/gpio.h"
@@ -15,13 +16,12 @@
 #include "driverlib/timer.h"
 #include "driverlib/uart.h"
 #include "driverlib/pwm.h"
-#include <string.h>
 //#include "inc/tm4c123gh6pm.h"
 #include "inc/tm4c1294ncpdt.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/timer.h"
-
+#include "foos_spi.h"
 
 
 #define PRINT_CALIBRATE (0)
@@ -116,6 +116,8 @@ typedef struct
 	
 	uint32_t stepWidth; //used for accel and decel
 	uint32_t stepWidth_counter;
+	
+	spi_num spi;
 } motor_foop;
 
 
@@ -124,7 +126,7 @@ int32_t distBetweenValues(int32_t offset, uint32_t valueA, uint32_t valueB);
 
 void UARTInit(void);
 
-void systemInit(motor_foop* motorArray, uint8_t totalMotors);
+void systemInit(volatile motor_foop* motorArray, uint8_t totalMotors);
 
 void motorsInit(motor_foop* motorArray, uint8_t totalMotors);
 
@@ -138,7 +140,7 @@ void MOTOR_DISABLE(uint32_t num, motor_foop * motorArray);
 
 int32_t stringToInt(char* c);
 
-inline void setMotorState(motorState state, motor_foop* motor)
+inline void setMotorState(motorState state, volatile motor_foop* motor)
 {
 	(*motor).state = state; 
 		
