@@ -13,6 +13,11 @@ es -Xlinker -Wl,-Map,WTimer.map -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=f
 LD=${PREFIX}-ld
 CC=${PREFIX}-gcc
 
+DANCE_SOURCE_FILES:=main_Dance.c
+DANCE_SOURCE_FILES+=hal_dance.c
+DANCE_SOURCE_FILES+= retarget.c
+DANCE_SOURCE_FILES+=startup_gcc.c
+
 C_SOURCE_FILES+=main2.c
 C_SOURCE_FILES+=startup_gcc.c
 C_SOURCE_FILES+=hal2.c
@@ -21,7 +26,7 @@ C_SOURCE_FILES+=AS5048.c
 C_SOURCE_FILES+=foos_spi.c
 
 OBJECT_FILES:=$(C_SOURCE_FILES:%.c=%.o)
-
+DANCE_OBJECT_FILES:=$(DANCE_SOURCE_FILES:%.c=%.o)
 #PART=TM4C123GH6PM
 PART=TM4C1294NCPDT
 
@@ -32,6 +37,8 @@ AFLAGS=-mthumb \
        ${CPU}  \
        ${FPU}  \
        -MD
+
+DANCE_PROGRAM_NAME=dance
 
 PROGRAM_NAME=testProgram
 
@@ -79,8 +86,8 @@ build:
 	${PREFIX}-objcopy -O binary ${PROGRAM_NAME}.o ${PROGRAM_NAME}.bin
 	${PREFIX}-size ${PROGRAM_NAME}.o
 
-flashScratch:
-	./lm4flash scratchTest.bin
+flashDance:
+	./lm4flash dance.bin
 
 flash:
 	./lm4flash ${PROGRAM_NAME}.bin
@@ -90,6 +97,12 @@ release: build
 
 debug: CFLAGS+=-g -D DEBUG -O0
 debug: build
+
+dance:
+	${CC} ${CFLAGS} ${DANCE_SOURCE_FILES}
+	${LD} ${DANCE_OBJECT_FILES} ${TIVA_LIB_DIR}/libdriver.a -T ${LINKER_FILE} ${LD_FLAGS} -o ${DANCE_PROGRAM_NAME}.o
+	${PREFIX}-objcopy -O binary ${DANCE_PROGRAM_NAME}.o ${DANCE_PROGRAM_NAME}.bin
+	${PREFIX}-size ${DANCE_PROGRAM_NAME}.o
 
 all: clean release
 

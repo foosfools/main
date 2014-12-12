@@ -17,7 +17,9 @@ int virtualPort_open()
 {
     int fd; //Descriptor for the port
     
-    fd = open("/dev/tty.usbmodem0F0029C1", O_RDWR | O_NOCTTY | O_NDELAY);
+    //fd = open("/dev/tty.usbmodem0F0029C1", O_RDWR | O_NOCTTY | O_NDELAY);
+    fd = open("/dev/tty.usbmodem0F002E61", O_RDWR | O_NOCTTY | O_NDELAY);
+    
     if (fd == -1) {
         cout << "Unable to open port. \n";
 	}

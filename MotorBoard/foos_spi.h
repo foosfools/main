@@ -11,6 +11,10 @@ typedef enum
 {
 	spi0,
 	spi1,
+	spi2,
+	spi3,
+	
+	num_spis,
 } spi_num;
 
 //enables MISO, MOSI, and CLK for specific spi port

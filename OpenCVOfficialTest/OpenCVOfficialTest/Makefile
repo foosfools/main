@@ -2,6 +2,10 @@ LIBS := -lopencv_calib3d -lopencv_contrib -lopencv_core -lopencv_features2d -lop
 
 INCLUDES := /usr/include/opencv
 
+DANCE_FILES:=DancingMotors.cpp
+DANCE_FILES+=main2.cpp
+DANCE_FILES+=../../MotorBoard/virtualPort/virtualPort.cpp
+
 C_SRC_FILES := OpenCVOfficialTest.cpp
 C_SRC_FILES += main.cpp
 C_SRC_FILES += Board.cpp
@@ -17,3 +21,8 @@ clean:
 	rm -rf *.o *~ $(EXECUTABLE)
 cleanPics:
 	rm -rf *.png
+
+dance:
+		g++ $(C_FLAGS) $(DANCE_FILES) -I $(INCLUDES) $(LIBS) -o dance.o
+	size dance.o
+

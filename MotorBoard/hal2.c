@@ -2,6 +2,7 @@
 * hal2.c
 */
 
+#include "foos_config.h"
 #include "hal2.h"
 #include "AS5048.h"
 #include "driverlib/rom_map.h"
@@ -12,11 +13,6 @@ extern inline void setMotorState(motorState state,volatile motor_foop* motor);
 extern int _write(int file, char* ptr, int len);
 
 volatile uint32_t clockF;
-
-void __error__(char *pcFilename, uint32_t ui32Line)
-{
-	//_write("TEST");
-}
 
 
 
@@ -36,11 +32,11 @@ void TimerInit()
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC);
 	if( PRINT_CALIBRATE )
 	{
-		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 2);
+		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 10);
 	}
 	else
 	{
-		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 300);
+		TimerLoadSet(TIMER0_BASE, TIMER_A, clockF / 600);
 	}
 	
 	IntMasterEnable();
@@ -89,7 +85,8 @@ void MOTOR_ENABLE(uint32_t num, motor_foop * motorArray, bool direction)
 	CRITICAL_START()	
 	{									 									
 		GPIOPinWrite(motorArray[num].dir_port, 
-					motorArray[num].dir_pin, 
+					motorArray[num].dir_pin,
+					//(direction) ? ~motorArray[num].dir_pin : motorArray[num].dir_pin); 
 					(direction == motorArray[num].directionBit) ? ~motorArray[num].dir_pin : motorArray[num].dir_pin);
 		GPIOPinWrite(motorArray[num].sleep_port, motorArray[num].sleep_pin, motorArray[num].sleep_pin);
 	}	
@@ -113,13 +110,20 @@ void MOTOR_DISABLE(uint32_t num,  motor_foop * motorArray)
 
 void motorsInit(motor_foop* motorArray, uint8_t totalMotors)
 {
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOK);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOK);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOP);
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOQ);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOH);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOG);
+
+
 	
 	for(int i = 0; i < totalMotors; i++)
 	{
@@ -242,11 +246,25 @@ void printHex16(uint16_t val)
 }
 
 
+
 int32_t distBetweenValues(int32_t offset, uint32_t valueA, uint32_t valueB)
 {
 	int32_t result = (((int)valueA - offset) & maxEncoderVal) - (((int)valueB - offset) & maxEncoderVal);
 	
 	return result;
+}
+
+
+
+void FaultISR(void)
+{
+	uint32_t port = GPIO_PORTF_BASE;
+	uint32_t pin  = GPIO_PIN_4;
+	
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+	GPIOPinTypeGPIOOutput(port, pin);
+	GPIOPinWrite(port, pin, pin);
+    
 }
 
 //EOF

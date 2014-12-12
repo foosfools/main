@@ -1,9 +1,11 @@
+#include "foos_config.h"
 #include "hal2.h"
 #include "AS5048.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+
 
 #pragma GCC optimize ("unroll-loops")
 
@@ -20,25 +22,38 @@ typedef enum
 
 static volatile bool eventArr[numEvents];
 
-#define TOTAL_MOTORS 2
 #define BUF_COUNT    32
-
-#define ACC_ENABLE (0)
 
 static char buf[BUF_COUNT];
 
 static uint8_t bufIndex = 0;
 
 
-
+//PCB
 static volatile motor_foop motor_info[] = 
 {	
-	{ .step_pin = GPIO_PIN_3, .step_port=GPIO_PORTF_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTM_BASE, .sleep_pin=GPIO_PIN_5, .sleep_port=GPIO_PORTM_BASE, .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_6, .midPoint = 0x2E54, .isKickMotor = false, .directionBit = true, .spi = spi0}, //motor0
+//m0 =  .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_6,
+//m1 =  .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_4,
+	{ .step_pin = GPIO_PIN_2, .step_port=GPIO_PORTF_BASE, .dir_pin=GPIO_PIN_6, .dir_port=GPIO_PORTM_BASE, .sleep_pin=GPIO_PIN_7, .sleep_port=GPIO_PORTM_BASE, .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_4, .midPoint = 0x328E, .isKickMotor = false, .directionBit = true, .spi = spi0}, //motor0 drv6
+	{ .step_pin = GPIO_PIN_1, .step_port=GPIO_PORTF_BASE, .dir_pin=GPIO_PIN_5, .dir_port=GPIO_PORTP_BASE, .sleep_pin=GPIO_PIN_0, .sleep_port=GPIO_PORTB_BASE, .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_6, .midPoint = 0xCF9, .isKickMotor = true,  .directionBit = true, .spi = spi0},   //motor1 drv7
+//	{ .step_pin = GPIO_PIN_0, .step_port=GPIO_PORTG_BASE, .dir_pin=GPIO_PIN_7, .dir_port=GPIO_PORTA_BASE, .sleep_pin=GPIO_PIN_3, .sleep_port=GPIO_PORTM_BASE, .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_6, .midPoint = 0x2B38, .isKickMotor = false,  .directionBit = false, .spi = spi0}, //motor2 drv3
+//	{ .step_pin = GPIO_PIN_0, .step_port=GPIO_PORTF_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTE_BASE, .sleep_pin=GPIO_PIN_0, .sleep_port=GPIO_PORTE_BASE, .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_4, .midPoint = 0x3101,  .isKickMotor = true,  .directionBit = true, .spi = spi0}  //motor3 drv8
+
+};	
+
+
+//BREADBOARD
+/*
+static volatile motor_foop motor_info[] = 
+{	
+//m0 =  .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_6,
+//m1 =  .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_4,
+	{ .step_pin = GPIO_PIN_3, .step_port=GPIO_PORTF_BASE, .dir_pin=GPIO_PIN_4, .dir_port=GPIO_PORTM_BASE, .sleep_pin=GPIO_PIN_5, .sleep_port=GPIO_PORTM_BASE, .slaveSel_port=GPIO_PORTK_BASE, .slaveSel_pin=GPIO_PIN_7, .midPoint = 0x3A8A, .isKickMotor = false, .directionBit = true, .spi = spi0}, //motor0
 	{ .step_pin = GPIO_PIN_4, .step_port=GPIO_PORTK_BASE, .dir_pin=GPIO_PIN_3, .dir_port=GPIO_PORTN_BASE, .sleep_pin=GPIO_PIN_4, .sleep_port=GPIO_PORTQ_BASE, .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_4, .midPoint = 0xCF9,  .isKickMotor = true,  .directionBit = true, .spi = spi0}  //motor1
 //	{ .step_pin = GPIO_PIN_2, .step_port=GPIO_PORTF_BASE, .dir_pin=GPIO_PIN_6, .dir_port=GPIO_PORTM_BASE, .sleep_pin=GPIO_PIN_7, .sleep_port=GPIO_PORTM_BASE, .slaveSel_port=GPIO_PORTD_BASE, .slaveSel_pin=GPIO_PIN_5, .midPoint = 0x250E, .isKickMotor = false, .directionBit = true, .spi = spi1}, //motor2
 //	{ .step_pin = GPIO_PIN_5, .step_port=GPIO_PORTK_BASE, .dir_pin=GPIO_PIN_1, .dir_port=GPIO_PORTN_BASE, .sleep_pin=GPIO_PIN_2, .sleep_port=GPIO_PORTN_BASE, .slaveSel_port=GPIO_PORTK_BASE, .slaveSel_pin=GPIO_PIN_3, .midPoint = 0xCF9, .isKickMotor = true,  .directionBit = true, .spi = spi1}   //motor3
 };																																																																							// .endPos = 0x07FE, .midPoint = 0x07FE		
-
+*/
 
 	
 void
@@ -215,7 +230,7 @@ static void readEncoders(void)
 				motor_info[i].encoderVal = AS5048_readAngle(motor_info[i].spi, motor_info[i].slaveSel_port, motor_info[i].slaveSel_pin);
 			CRITICAL_END();
 			
-			if( PRINT_CALIBRATE && i < 2 )
+			if( PRINT_CALIBRATE )
 			{
 				printHex16(motor_info[i].encoderVal);
 			}
@@ -231,30 +246,34 @@ static void handleWriteToScreenEvent(void)
 		char c = '\n';
 			_write(0, buf, bufIndex + 1);
 			_write(0, &c, 1);
-			
-			bufIndex = 0;
 
 			uint8_t motorNum;
 			bool direction;
 			uint32_t endPos;
 			
-			if(parsemotorData(buf, &motorNum, &direction, &endPos))
+			if( parsemotorData(buf, &motorNum, &direction, &endPos) )
 			{
-				if( endPos > 15000 ) //makes sure that endpos is in reachable range, otherwise it would keep hitting the edge of the table
+				if( endPos > 14000 ) //makes sure that endpos is in reachable range, otherwise it would keep hitting the edge of the table
 				{
-					endPos = 15500;
+					endPos = 14000;
 				}
-				else if( endPos <1000 )
+				else if( endPos <2000 )
 				{
-					endPos = 1000;
+					endPos = 2000;
 				} 
-				CRITICAL_START();
-					motor_info[motorNum].endPos = (endPos + motor_info[motorNum].offset) & maxEncoderVal;
-				CRITICAL_END();
+				
+				if(motorNum < TOTAL_MOTORS)
+				{
+					CRITICAL_START();
+						motor_info[motorNum].endPos = (endPos + motor_info[motorNum].offset) & maxEncoderVal;
+					CRITICAL_END();
+				}
 			}
 			
-			bufIndex = 0;
-
+			CRITICAL_START();
+				bufIndex = 0;
+			CRITICAL_END();
+			
 			for(uint32_t i = 0; i < BUF_COUNT; i++)
 			{
 			   buf[i] = '\0'; 
@@ -264,9 +283,8 @@ static void handleWriteToScreenEvent(void)
 
 
 int main(void)
-{   
+{ 
 	systemInit(motor_info, TOTAL_MOTORS);
-
 
 	for(;;)
 	{

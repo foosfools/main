@@ -19,6 +19,8 @@ void spiPort_init(spi_num spi)
 	
 	uint32_t spi_base = 0;
 	
+	//FOOS_ASSERT( spi < num_spis );
+	
 	switch( spi )
 	{
 		case spi0:
@@ -47,12 +49,44 @@ void spiPort_init(spi_num spi)
 			GPIOPinConfigure(GPIO_PE4_SSI1XDAT0); //MOSI
 			GPIOPinConfigure(GPIO_PE5_SSI1XDAT1); //MISO
 
-			SSIConfigSetExpClk(SSI1_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_1,
+			SSIConfigSetExpClk(spi_base, SysCtlClockGet(), SSI_FRF_MOTO_MODE_1,
 							   SSI_MODE_MASTER, spiFreq, 16);
-			SSIEnable(SSI1_BASE);
+			SSIEnable(spi_base);
    
 			GPIOPinTypeSSI(GPIO_PORTE_BASE,  GPIO_PIN_4 | GPIO_PIN_5);
 			GPIOPinTypeSSI(GPIO_PORTB_BASE,  GPIO_PIN_5);
+			break;
+			
+		case spi2:
+			spi_base = SSI2_BASE;
+			SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI2);
+			SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+	
+			GPIOPinConfigure(GPIO_PD3_SSI2CLK);
+			GPIOPinConfigure(GPIO_PD1_SSI2XDAT0); //MOSI
+			GPIOPinConfigure(GPIO_PD0_SSI2XDAT1); //MISO
+
+			SSIConfigSetExpClk(spi_base, SysCtlClockGet(), SSI_FRF_MOTO_MODE_1,
+							   SSI_MODE_MASTER, spiFreq, 16);
+			SSIEnable(spi_base);
+   
+			GPIOPinTypeSSI(GPIO_PORTD_BASE,  GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_3);
+			break;
+			
+		case spi3:
+			spi_base = SSI3_BASE;
+			SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI3);
+			SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOQ);
+	
+			GPIOPinConfigure(GPIO_PQ0_SSI3CLK);
+			GPIOPinConfigure(GPIO_PQ2_SSI3XDAT0); //MOSI
+			GPIOPinConfigure(GPIO_PQ3_SSI3XDAT1); //MISO
+
+			SSIConfigSetExpClk(spi_base, SysCtlClockGet(), SSI_FRF_MOTO_MODE_1,
+							   SSI_MODE_MASTER, spiFreq, 16);
+			SSIEnable(spi_base);
+   
+			GPIOPinTypeSSI(GPIO_PORTQ_BASE,  GPIO_PIN_0 | GPIO_PIN_2 | GPIO_PIN_3);
 			break;
    }
    
@@ -103,6 +137,13 @@ void spi_write16(spi_num spi, uint16_t* buf, size_t size)
 		case spi1:
 			spi_base = SSI1_BASE;
 			break;
+			
+		case spi2:
+			spi_base = SSI2_BASE;
+			break;
+			
+		case spi3:
+			spi_base = SSI3_BASE;
 	}
 	
 	for(uint32_t i = 0; i < size; i++)

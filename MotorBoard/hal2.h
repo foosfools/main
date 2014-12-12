@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "foos_config.h"
 #include "driverlib/rom_map.h"
 #include "inc/hw_memmap.h"
 #include "driverlib/gpio.h"
@@ -24,35 +25,12 @@
 #include "foos_spi.h"
 
 
-#define PRINT_CALIBRATE (0)
-
-
-
-static volatile uint32_t criticalRegionCount = 0;
-
 
 
 enum
 {
 	maxEncoderVal = 0x3FFF,
 };
-
-
-#define CRITICAL_START()    \
-{ 							\
-	IntMasterDisable();     \
-	criticalRegionCount++;  \
-}
-
-
-
-#define CRITICAL_END()               \
-{						    		 \
-	if(--criticalRegionCount == 0)   \
-		IntMasterEnable();			 \
-}
-
-
 	
 typedef enum
 {

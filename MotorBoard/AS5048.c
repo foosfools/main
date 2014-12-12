@@ -12,7 +12,8 @@ extern int _write(int file, char* ptr, int len);
 void AS5048_init(motor_foop* motorArray, uint8_t totalMotors)
 {
 	spiPort_init(spi0);
-	spiPort_init(spi1);
+	//spiPort_init(spi3);
+	//spiPort_init(spi2);	
 	
 	for(uint32_t i = 0; i < totalMotors; i++)
 	{
